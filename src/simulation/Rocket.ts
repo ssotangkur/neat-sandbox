@@ -10,6 +10,7 @@ import {
 } from "@dimforge/rapier3d-compat";
 import { Agent } from "./Simulation";
 import { ROCKET_MASK } from "../utils/BitMasks";
+import _ from "lodash";
 
 export type RocketConfig = {
   mass: number; // in Kg
@@ -39,8 +40,6 @@ export class Rocket implements Agent {
   public orientation = new Quaternion();
   public angularVelocity = new Vector3();
   public velocity = new Vector3();
-
-  private thrustHandler: ThrustHandler | undefined;
   public rigidBody: RigidBody | undefined;
 
   constructor(
@@ -55,16 +54,6 @@ export class Rocket implements Agent {
       .clone()
       .sub(this.startPosition)
       .length();
-  }
-
-  public registerThrustHandler(handler: ThrustHandler) {
-    this.thrustHandler = handler;
-    const unregister = () => {
-      if (this.thrustHandler === handler) {
-        this.thrustHandler = undefined;
-      }
-    };
-    return unregister;
   }
 
   public fitness() {
@@ -181,13 +170,19 @@ export class Rocket implements Agent {
     this.control(outputs[0], new Vector2(outputs[1], outputs[2]));
   }
 
-  public control(thrust: number, thrustVector: Vector2) {
-    if (thrust === 0 || !this.alive) {
+  public control(rawThrust: number, rawThrustVector: Vector2) {
+    if (rawThrust === 0 || !this.alive) {
       this.thrustVector.set(0, 0, 0);
       this.rocketAlignedThrustVector.set(0, 0, 0);
-      this.thrustHandler?.(this.rocketAlignedThrustVector);
       return;
     }
+
+    // Clamp thrust so we don't accept bad inputs
+    let thrustVector =
+      rawThrustVector.length() > 1
+        ? rawThrustVector.clone().normalize()
+        : rawThrustVector;
+    let thrust = _.clamp(rawThrust, 0, this.config.maxThrust);
 
     // Manage fuel
     let thrustControl = thrust;
@@ -204,13 +199,12 @@ export class Rocket implements Agent {
     const y = -(1 - x * x - z * z); // y should always be negative
 
     const thrustVDelta = new Vector3(x, y, z);
-    const clampedThrust = Math.min(this.config.maxThrust, thrustControl);
+
     this.rocketAlignedThrustVector = thrustVDelta
       .clone()
-      .multiplyScalar(clampedThrust);
+      .multiplyScalar(thrustControl);
 
     let netForceVector = this.rocketAlignedThrustVector.clone().negate();
-    this.thrustHandler?.(netForceVector);
 
     if (!this.rigidBody) {
       return;

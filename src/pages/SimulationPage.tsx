@@ -63,18 +63,21 @@ export type SimulationPageProps = {
 
 export const SimulationPage = ({ individuals }: SimulationPageProps) => {
   const [rocketSim, setRocketSim] = useState<RocketSimulation>();
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const rocketSim = new RocketSimulation(defaultRocketConfig);
+    setInitialized(false);
     const initSim = async () => {
       await rocketSim.init(individuals);
+      setInitialized(true);
       setRocketSim(rocketSim);
     };
     initSim();
 
     // Free resources when unmounting
     return () => {
-      rocketSim.reset();
+      // rocketSim.reset();
     };
   }, [individuals]);
 

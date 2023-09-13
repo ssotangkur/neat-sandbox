@@ -9,8 +9,8 @@ export const defaultRocketConfig: RocketConfig = {
   length: 2,
   radius: 0.1,
   maxAngle: Math.PI / 12,
-  maxThrust: 100,
-  fuelCapacity: 20,
+  maxThrust: 40,
+  fuelCapacity: 200,
 };
 
 export const createRocket = (
@@ -46,7 +46,7 @@ export class RocketSimulation implements Simulation<Rocket> {
     this.maxFitness = Number.MIN_SAFE_INTEGER;
     this.bestOverall = undefined;
 
-    this.world?.free();
+    // this.world?.free();
     this.world = undefined;
     this.rockets = [];
   }

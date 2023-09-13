@@ -132,7 +132,7 @@ export class SpeciesManager extends SubscriptionManager<SpeciesManager> {
         s.genSinceImprovement - options.speciationOptions.stagnationThreshold
       );
       const penaltyFactor = Math.max(
-        0,
+        0.01,
         1 - penaltyGen * options.speciationOptions.stagnationPenaltyRate
       );
       return penaltyFactor;
@@ -260,6 +260,10 @@ export class SpeciesManager extends SubscriptionManager<SpeciesManager> {
     if (len < options.targetNumSpecies) {
       // Need more so reduce dynThresh
       this.dynamicCompatibilityThreshold -= options.compatibilityChangeRate;
+      this.dynamicCompatibilityThreshold = Math.max(
+        0.9,
+        this.dynamicCompatibilityThreshold
+      );
     } else if (len > options.targetNumSpecies) {
       // Need less
       this.dynamicCompatibilityThreshold += options.compatibilityChangeRate;

@@ -1,3 +1,17 @@
+# NEAT-Sandbox
+
+A web based application to simulate physical systems and train intelligent agents in the using the NEAT algorithm
+
+# Usage
+
+In a terminal run:
+
+```
+npm run dev
+```
+
+Then open a browser to the url displayed in the terminal output.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

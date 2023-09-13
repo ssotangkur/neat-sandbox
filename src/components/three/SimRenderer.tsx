@@ -5,7 +5,7 @@ import { Axes } from "./Axes";
 import { useRef, FunctionComponent } from "react";
 import _ from "lodash";
 
-const TIME_SLICE = 1 / 60;
+const TIME_SLICE = 1 / 15;
 
 export type AgentRendererProps<T extends Agent> = {
   agent: T;
@@ -36,6 +36,7 @@ export const SimRenderer = <T extends Agent>({
     if (elapsed < TIME_SLICE) {
       return;
     }
+
     // If we need to run multiple phyics steps due to large delta
     const numStepsToRun = 1; //Math.floor(elapsed / TIME_SLICE);
     lastStepDeltaRef.current = elapsed % TIME_SLICE;

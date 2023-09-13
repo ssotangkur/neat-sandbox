@@ -12,6 +12,7 @@ export const evaluateRockets: EvaluateIndividualsFunc = async (individuals) => {
     stepCount++;
   }
   const evaled = sim.evaluate();
+  sim.reset(); // clean up resources
 
   evaled.sort((a, b) => b.fitness - a.fitness);
 
