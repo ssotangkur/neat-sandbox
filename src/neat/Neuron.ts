@@ -18,11 +18,11 @@ export class Neuron {
 
 export type Activation = "identity" | "sigmoid" | "relu" | "bias";
 // Activation Functions
-const identity = (x: number) => x;
+export const identity = (x: number) => x;
 // Fast Approx of Sigmoid
-const sigmoid = (x: number) => 0.5 * (x / (1 + Math.abs(x)) + 1);
-const relu = (x: number) => Math.max(0, x);
-const bias = (_: number) => 1;
+export const sigmoid = (x: number) => 0.5 * (x / (1 + Math.abs(x)) + 1);
+export const relu = (x: number) => Math.max(0, x);
+export const bias = (_: number) => 1;
 
 export const getActivationFunction = (neuron: Neuron) => {
   switch (neuron.activation) {

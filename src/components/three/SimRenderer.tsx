@@ -1,11 +1,11 @@
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { Agent, Simulation } from "../../simulation/Simulation";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Axes } from "./Axes";
 import { useRef, FunctionComponent } from "react";
 import _ from "lodash";
 
-const TIME_SLICE = 1 / 15;
+const TIME_SLICE = 1 / 60;
 
 export type AgentRendererProps<T extends Agent> = {
   agent: T;
