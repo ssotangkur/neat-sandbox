@@ -11,6 +11,7 @@ import {
 import { Agent } from "./Simulation";
 import { ROCKET_MASK } from "../utils/BitMasks";
 import _ from "lodash";
+import { sigmoid } from "../neat/Neuron";
 
 export type RocketConfig = {
   mass: number; // in Kg
@@ -135,17 +136,25 @@ export class Rocket implements Agent {
     }
 
     this.vecToTarget = this.simConfig.target.clone().sub(pos);
-    this.distanceToTarget = this.vecToTarget.length();
+
+    // use a modified distance to target that rewards x/z distance over y distance
+    const modifiedDist = new Vector3(
+      this.vecToTarget.x * 10,
+      this.vecToTarget.y,
+      this.vecToTarget.z * 10
+    );
+    this.distanceToTarget = modifiedDist.length();
+    this.angularVelocity = vec3(this.rigidBody.angvel());
     if (this.distanceToTarget < this.closestDistToTarget) {
       this.fuelAtClosest = this.fuel;
       this.closestDistToTarget = this.distanceToTarget;
       this._fitness =
-        (this.fuelAtClosest * 100) / (this.closestDistToTarget + 1);
+        (this.fuelAtClosest * 100) /
+        (this.closestDistToTarget + 1 + this.angularVelocity.length());
     }
 
     // collect other stats
     this.orientation = quat(this.rigidBody.rotation()).normalize();
-    this.angularVelocity = vec3(this.rigidBody.angvel());
     this.velocity = vec3(this.rigidBody.linvel());
 
     // Check if we hit target
@@ -167,11 +176,14 @@ export class Rocket implements Agent {
     inputs.push(...this.velocity); // 3
     inputs.push(this.fuel); // 1
     const outputs = this.brain.kernel.predict(inputs); // 14 inputs, 3 outputs
-    this.control(outputs[0], new Vector2(outputs[1], outputs[2]));
+    this.control(
+      sigmoid(outputs[0]),
+      new Vector2(sigmoid(outputs[1]) * 2 - 1, sigmoid(outputs[2]) * 2 - 1)
+    );
   }
 
   public control(rawThrust: number, rawThrustVector: Vector2) {
-    if (rawThrust === 0 || !this.alive) {
+    if (!this.alive) {
       this.thrustVector.set(0, 0, 0);
       this.rocketAlignedThrustVector.set(0, 0, 0);
       return;
@@ -182,7 +194,8 @@ export class Rocket implements Agent {
       rawThrustVector.length() > 1
         ? rawThrustVector.clone().normalize()
         : rawThrustVector;
-    let thrust = _.clamp(rawThrust, 0, this.config.maxThrust);
+    // thrust is % of max
+    let thrust = _.clamp(rawThrust, 0, 1) * this.config.maxThrust;
 
     // Manage fuel
     let thrustControl = thrust;

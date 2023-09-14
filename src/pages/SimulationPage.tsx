@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { Button } from "../ui/Button";
 
@@ -7,10 +7,12 @@ import { Individual } from "../neat/Population";
 import { SimRenderer } from "../components/three/SimRenderer";
 import {
   RocketSimulation,
+  createRandomTarget,
   defaultRocketConfig,
 } from "../simulation/RocketSimulation";
 import { RocketAgentRenderer } from "../components/three/RocketAgentRenderer";
 import { Canvas } from "@react-three/fiber";
+import { ErrorBoundary } from "react-error-boundary";
 
 const DivRelative = styled.div`
   position: relative;
@@ -63,34 +65,48 @@ export type SimulationPageProps = {
 
 export const SimulationPage = ({ individuals }: SimulationPageProps) => {
   const [rocketSim, setRocketSim] = useState<RocketSimulation>();
-  const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => {
-    const rocketSim = new RocketSimulation(defaultRocketConfig);
-    setInitialized(false);
+  // We need to be able to track if the sim is initialized or not
+  const initializedRef = useRef(false);
+
+  const resetSim = useCallback(() => {
+    const rocketSim = new RocketSimulation(defaultRocketConfig, {
+      target: createRandomTarget(),
+      boundsRadius: 200,
+    });
+    initializedRef.current = false;
     const initSim = async () => {
       await rocketSim.init(individuals);
-      setInitialized(true);
+      initializedRef.current = true;
       setRocketSim(rocketSim);
     };
     initSim();
+    return rocketSim;
+  }, [individuals]);
 
+  useEffect(() => {
+    const sim = resetSim();
     // Free resources when unmounting
     return () => {
-      // rocketSim.reset();
+      try {
+        sim.reset();
+      } catch (error) {
+        console.error(error);
+      }
     };
   }, [individuals]);
 
   return (
     <DivRelative>
-      {rocketSim ? (
-        <Canvas shadows>
-          <SimRenderer sim={rocketSim} agentRenderer={RocketAgentRenderer} />
-        </Canvas>
-      ) : (
-        <h1>Initializing...</h1>
-      )}
-      {/* <Canvas shadows>
+      <ErrorBoundary fallback={<h1>Error Occured</h1>}>
+        {rocketSim ? (
+          <Canvas shadows>
+            <SimRenderer sim={rocketSim} agentRenderer={RocketAgentRenderer} />
+          </Canvas>
+        ) : (
+          <h1>Initializing...</h1>
+        )}
+        {/* <Canvas shadows>
         <PerspectiveCamera position={[0, 4, 10]} makeDefault />
         <OrbitControls
           // enableZoom={true}
@@ -111,13 +127,10 @@ export const SimulationPage = ({ individuals }: SimulationPageProps) => {
           ])}
       </Canvas>
       <TwoAxisInput onDrag={onGimbal} onRelease={onRelease} />
-      <ResetBtn
-        onClick={() => {
-          setRockets(() => createRockets(individuals));
-          setShow(false);
-        }}
-      />
-      <Stats rocket={rockets[0]} /> */}
+      <Stats rocket={rockets[0]} /> 
+        */}
+        <ResetBtn onClick={resetSim} />
+      </ErrorBoundary>
     </DivRelative>
   );
 };
