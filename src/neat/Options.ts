@@ -62,10 +62,7 @@ export const defaultSpeciationOptions: SpeciationOptions = {
   maxStagnationGens: 70,
 };
 
-export type EvaluateIndividualsFunc = (
-  individuals: Individual[],
-  popOptions: PopulationOptions
-) => Promise<{
+export type EvaluateIndividualsFunc = (individuals: Individual[]) => Promise<{
   minFitness: number;
   maxFitness: number;
   bestOverall: EvaluatedIndividual;

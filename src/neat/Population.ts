@@ -20,7 +20,7 @@ export const initalizePopulation = async (
       } as Individual;
     });
   const { minFitness, maxFitness, bestOverall, individuals } =
-    await options.evaluateIndividuals(newGen, options);
+    await options.evaluateIndividuals(newGen);
   speciesManager.speciate(individuals, options.speciationOptions);
 
   return {
@@ -66,7 +66,7 @@ export const nextGeneration = async (
   const nextGen = [...newGeneration, ...elites];
 
   const { minFitness, maxFitness, bestOverall, individuals } =
-    await options.evaluateIndividuals(nextGen, options);
+    await options.evaluateIndividuals(nextGen);
   p.speciesManager.clearSpeciesMap(); // Clear out all individuals in Specie before speciation
   p.speciesManager.speciate(individuals, options.speciationOptions);
   p.speciesManager.removeEmptySpecies();

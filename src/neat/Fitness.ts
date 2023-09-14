@@ -1,6 +1,6 @@
 import _ from "lodash";
-import { Kernel } from "./Inference";
-import { EvaluateIndividualsFunc, PopulationOptions } from "./Options";
+import { Kernel, predict } from "./Inference";
+import { EvaluateIndividualsFunc } from "./Options";
 import { EvaluatedIndividual, Individual } from "./Population";
 
 export type FitnessFunction = (kernel: Kernel) => number;
@@ -17,7 +17,7 @@ export const XOR_INPUT = [
 ];
 export const XOR_OUTPUT = [[0], [1], [1], [0]];
 export const XORFitness: FitnessFunction = (kernel: Kernel) => {
-  const predictions = XOR_INPUT.map((input) => kernel.predict(input));
+  const predictions = XOR_INPUT.map((input) => predict(kernel, input));
   const errors = _.zip(XOR_OUTPUT, predictions).map(
     ([expected_arr, actual_arr]) => {
       const predictionErrors = _.zip(expected_arr!, actual_arr!).map(
@@ -32,7 +32,7 @@ export const XORFitness: FitnessFunction = (kernel: Kernel) => {
 };
 
 export const XOREndCondition: EndCondition = (kernel) => {
-  const predictions = XOR_INPUT.map((input) => kernel.predict(input));
+  const predictions = XOR_INPUT.map((input) => predict(kernel, input));
   // Check each pair of output arrays
   return _.zip(XOR_OUTPUT, predictions).every(([expected, actual]) => {
     const rounded = actual?.map(Math.round);
@@ -42,8 +42,7 @@ export const XOREndCondition: EndCondition = (kernel) => {
 };
 
 export const evaluateIndividuals: EvaluateIndividualsFunc = async (
-  individuals: Individual[],
-  _: PopulationOptions
+  individuals: Individual[]
 ) => {
   let maxFitness = Number.MIN_SAFE_INTEGER;
   let minFitness = Number.MAX_SAFE_INTEGER;

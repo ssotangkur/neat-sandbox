@@ -129,37 +129,71 @@ export class Kernel {
     this.layers = segmentIntoLayers(neuralNet.neurons, neuralNet.enabledGenes);
   }
 
-  public predict(inputs: number[]): number[] {
-    // Use a single array for all activations/inputs. This will become a tensor later
-    const activations = Array(this.neuralNet.neurons.length).fill(0);
-    const totalLayers = this.layers.length;
+  // public predict(inputs: number[]): number[] {
+  //   // Use a single array for all activations/inputs. This will become a tensor later
+  //   const activations = Array(this.neuralNet.neurons.length).fill(0);
+  //   const totalLayers = this.layers.length;
 
-    let activationIdx = 0;
-    for (let currentLayer = 0; currentLayer < totalLayers; currentLayer++) {
-      if (currentLayer === 0) {
-        // initialize with the inputs
-        inputs.forEach((input, i) => {
-          const activationFn = getActivationFunction(
-            this.layers[currentLayer][i].neuron
-          );
-          activations[activationIdx++] = activationFn(input);
-        });
-        // increment activationIdx for the bias input, which acts like a hidden input
-        activationIdx++;
-      } else {
-        const layer = this.layers[currentLayer];
-        layer.forEach((node) => {
-          // dot product weights and activations of dependencies
-          const dotProduct = node.inWeights.reduce((sum, weight, i) => {
-            return sum + weight * activations[node.inNodeIdx[i]];
-          }, 0);
-          const activationFn = getActivationFunction(node.neuron);
-          activations[activationIdx++] = activationFn(dotProduct);
-        });
-      }
-    }
+  //   let activationIdx = 0;
+  //   for (let currentLayer = 0; currentLayer < totalLayers; currentLayer++) {
+  //     if (currentLayer === 0) {
+  //       // initialize with the inputs
+  //       inputs.forEach((input, i) => {
+  //         const activationFn = getActivationFunction(
+  //           this.layers[currentLayer][i].neuron
+  //         );
+  //         activations[activationIdx++] = activationFn(input);
+  //       });
+  //       // increment activationIdx for the bias input, which acts like a hidden input
+  //       activationIdx++;
+  //     } else {
+  //       const layer = this.layers[currentLayer];
+  //       layer.forEach((node) => {
+  //         // dot product weights and activations of dependencies
+  //         const dotProduct = node.inWeights.reduce((sum, weight, i) => {
+  //           return sum + weight * activations[node.inNodeIdx[i]];
+  //         }, 0);
+  //         const activationFn = getActivationFunction(node.neuron);
+  //         activations[activationIdx++] = activationFn(dotProduct);
+  //       });
+  //     }
+  //   }
 
-    // get activations of output nodes
-    return activations.slice(-1 * this.layers[this.layers.length - 1].length);
-  }
+  //   // get activations of output nodes
+  //   return activations.slice(-1 * this.layers[this.layers.length - 1].length);
+  // }
 }
+
+export const predict = (kernel: Kernel, inputs: number[]) => {
+  // Use a single array for all activations/inputs. This will become a tensor later
+  const activations = Array(kernel.neuralNet.neurons.length).fill(0);
+  const totalLayers = kernel.layers.length;
+
+  let activationIdx = 0;
+  for (let currentLayer = 0; currentLayer < totalLayers; currentLayer++) {
+    if (currentLayer === 0) {
+      // initialize with the inputs
+      inputs.forEach((input, i) => {
+        const activationFn = getActivationFunction(
+          kernel.layers[currentLayer][i].neuron
+        );
+        activations[activationIdx++] = activationFn(input);
+      });
+      // increment activationIdx for the bias input, which acts like a hidden input
+      activationIdx++;
+    } else {
+      const layer = kernel.layers[currentLayer];
+      layer.forEach((node) => {
+        // dot product weights and activations of dependencies
+        const dotProduct = node.inWeights.reduce((sum, weight, i) => {
+          return sum + weight * activations[node.inNodeIdx[i]];
+        }, 0);
+        const activationFn = getActivationFunction(node.neuron);
+        activations[activationIdx++] = activationFn(dotProduct);
+      });
+    }
+  }
+
+  // get activations of output nodes
+  return activations.slice(-1 * kernel.layers[kernel.layers.length - 1].length);
+};

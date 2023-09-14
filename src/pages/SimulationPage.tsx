@@ -14,6 +14,7 @@ import {
 import { RocketAgentRenderer } from "../components/three/RocketAgentRenderer";
 import { Canvas } from "@react-three/fiber";
 import { ErrorBoundary } from "react-error-boundary";
+import { useWorker } from "../utils/useWorker";
 
 const DivRelative = styled.div`
   position: relative;
@@ -66,6 +67,8 @@ export type SimulationPageProps = {
 
 export const SimulationPage = ({ individuals }: SimulationPageProps) => {
   const [rocketSim, setRocketSim] = useState<RocketSimulation>();
+
+  const [stats, invokeEval] = useWorker("EvalRockets", (a) => console.log(a));
 
   // We need to be able to track if the sim is initialized or not
   const initializedRef = useRef(false);
@@ -131,6 +134,7 @@ export const SimulationPage = ({ individuals }: SimulationPageProps) => {
       <Stats rocket={rockets[0]} /> 
         */}
         <ResetBtn onClick={resetSim} />
+        <Button onClick={() => invokeEval(individuals)}>Sum</Button>
       </ErrorBoundary>
     </DivRelative>
   );

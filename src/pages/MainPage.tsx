@@ -16,6 +16,7 @@ import { ChartPage } from "./ChartPage";
 import { SimulationPage } from "./SimulationPage";
 import { OptionsPage } from "./options/OptionsPage";
 import { ErrorBoundary } from "react-error-boundary";
+import { useWorker } from "../utils/useWorker";
 
 // Get current options from local storage or make some as default
 const { optionSet, currentOption } = readFromLocalStorage();
@@ -60,6 +61,9 @@ export const MainPage = () => {
   const [selected, setSelected] = useState<Individual>();
   const [selectedSpecie, setSelectedSpecie] = useState<Specie>();
   const [running, setRunning] = useState(false);
+
+  const [msg, invoke] = useWorker("Hello", (a) => console.log(a));
+  const [sum, invokeSum] = useWorker("Sum", (a) => console.log(a));
 
   useEffect(() => {
     const setPopAsync = async () => {
@@ -137,6 +141,7 @@ export const MainPage = () => {
             }}
             disabled={population?.foundSolution || running}
           />
+          <Button onClick={() => invoke("World")}>Invoke</Button>
         </Row>
       </Column>
     </FullScreen>

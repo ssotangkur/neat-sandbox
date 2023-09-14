@@ -11,6 +11,7 @@ import { Agent } from "./Simulation";
 import { ROCKET_MASK } from "../utils/BitMasks";
 import _ from "lodash";
 import { sigmoid } from "../neat/Neuron";
+import { predict } from "../neat/Inference";
 
 export type RocketConfig = {
   mass: number; // in Kg
@@ -175,7 +176,7 @@ export class Rocket implements Agent {
     inputs.push(...this.angularVelocity); // 3
     inputs.push(...this.velocity); // 3
     inputs.push(this.fuel); // 1
-    const outputs = this.brain.kernel.predict(inputs); // 14 inputs, 3 outputs
+    const outputs = predict(this.brain.kernel, inputs); // 14 inputs, 3 outputs
     this.control(
       sigmoid(outputs[0]),
       new Vector2(sigmoid(outputs[1]) * 2 - 1, sigmoid(outputs[2]) * 2 - 1)
