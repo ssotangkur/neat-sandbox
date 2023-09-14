@@ -4,7 +4,7 @@ import { NeuralNet } from "./NeuralNet";
 import { Gene } from "./Gene";
 import { Neuron, NeuronType } from "./Neuron";
 import { Kernel } from "./Inference";
-import { SpeciesManager } from "./Speciation";
+import { Specie, SpeciesManager } from "./Speciation";
 import { PopulationOptions } from "./Options";
 
 export const initalizePopulation = async (
@@ -31,6 +31,7 @@ export const initalizePopulation = async (
     foundSolution: options.endCondition(bestOverall.kernel!, maxFitness),
     speciesManager,
     individuals: speciesManager.species.flatMap((s) => s.population),
+    species: speciesManager.species,
   };
 };
 
@@ -46,12 +47,13 @@ export type EvaluatedIndividual = Individual & {
 
 export type Population = {
   generation: number;
-  maxFitness?: number;
-  minFitness?: number;
+  maxFitness: number;
+  minFitness: number;
   best: Individual;
   foundSolution: boolean;
   speciesManager: SpeciesManager;
   individuals: EvaluatedIndividual[];
+  species: Specie[];
 };
 
 export const nextGeneration = async (
@@ -82,6 +84,7 @@ export const nextGeneration = async (
     foundSolution: options.endCondition(bestOverall.kernel!, maxFitness),
     speciesManager: p.speciesManager,
     individuals: p.speciesManager.species.flatMap((s) => s.population),
+    species: p.speciesManager.species,
   };
 };
 
