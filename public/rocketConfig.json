@@ -1,0 +1,27 @@
+{
+  "count": 150,
+  "inputs": 14,
+  "outputs": 3,
+  "evalType": "Rocket",
+  "mutationOptions": {
+    "addGeneRate": 0.01,
+    "addNeuronRate": 0.01,
+    "activationForNewNeurons": "sigmoid",
+    "weightChangeRate": 0.3,
+    "biasChangeRate": 0.05
+  },
+  "speciationOptions": {
+    "compatibilityThreshold": 0.9,
+    "compatibilityChangeRate": 0.01,
+    "targetNumSpecies": 10,
+    "excessMissingFactor": 1,
+    "weightsFactor": 0.4,
+    "minPopulation": 4,
+    "selectionPercent": 0.8,
+    "elitePercent": 0.1,
+    "minElite": 1,
+    "stagnationThreshold": 15,
+    "stagnationPenaltyRate": 0.02,
+    "maxStagnationGens": 70
+  }
+}
