@@ -4,11 +4,12 @@ import { Row } from "../ui/Row";
 import { HoverAwareProps, MultiNetViz } from "./MultiNetViz";
 import { Individual } from "../neat/Population";
 import { Specie, SpeciesManager } from "../neat/Speciation";
-import { useSubscription } from "../utils/SubsciptionManager";
+import _ from "lodash";
 
 export type SpeciationVizProps = {
   onHoverSpecie?: (specie: Specie) => void;
   speciesManager: SpeciesManager;
+  species?: Specie[];
 } & HoverAwareProps;
 
 export const SpeciationViz = (props: SpeciationVizProps) => {
@@ -19,20 +20,19 @@ export const SpeciationViz = (props: SpeciationVizProps) => {
     setSelected(i);
   };
 
-  const speciesMgr = useSubscription(props.speciesManager);
-
   return (
     <Column spacing={1} $grow $shrink>
-      {speciesMgr?.species.map((s, i) => (
-        <Row key={i} onMouseEnter={() => props.onHoverSpecie?.(s)}>
-          <MultiNetViz
-            {...props}
-            individuals={s.population}
-            onHover={onHover}
-            selected={selected}
-          />
-        </Row>
-      ))}
+      {props.species &&
+        props.species.map((s, i) => (
+          <Row key={i} onMouseEnter={() => props.onHoverSpecie?.(s)}>
+            <MultiNetViz
+              {...props}
+              individuals={s.population}
+              onHover={onHover}
+              selected={selected}
+            />
+          </Row>
+        ))}
     </Column>
   );
 };
