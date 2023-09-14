@@ -46,6 +46,7 @@ export const SpeciationPage = ({
           onHover={onHover}
           onHoverSpecie={onHoverSpecie}
           speciesManager={speciesManager}
+          species={population?.species}
         />
       </Panel>
       <Panel $constrainchildwidth $overflowX="auto" $noshrink>

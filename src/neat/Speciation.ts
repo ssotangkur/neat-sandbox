@@ -261,7 +261,7 @@ export class SpeciesManager extends SubscriptionManager<SpeciesManager> {
       // Need more so reduce dynThresh
       this.dynamicCompatibilityThreshold -= options.compatibilityChangeRate;
       this.dynamicCompatibilityThreshold = Math.max(
-        0.9,
+        0.01,
         this.dynamicCompatibilityThreshold
       );
     } else if (len > options.targetNumSpecies) {

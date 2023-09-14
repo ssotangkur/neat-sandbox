@@ -1,9 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-  EvaluatedIndividual,
-  Individual,
-  Population,
-} from "../neat/Population";
+import { ChangeEventHandler, useCallback, useEffect, useState } from "react";
+import { Individual, Population } from "../neat/Population";
 import { Button } from "../ui/Button";
 import { Panel } from "../ui/Panel";
 import { Column } from "../ui/Column";
@@ -19,6 +15,7 @@ import { Epochs } from "../neat/Epoch";
 import { ChartPage } from "./ChartPage";
 import { SimulationPage } from "./SimulationPage";
 import { OptionsPage } from "./options/OptionsPage";
+import { ErrorBoundary } from "react-error-boundary";
 
 // Get current options from local storage or make some as default
 const { optionSet, currentOption } = readFromLocalStorage();
@@ -33,18 +30,40 @@ let options = optionKey
       endCondition: XOREndCondition,
     });
 
-const epochs = new Epochs();
 const speciesManager = new SpeciesManager();
+const epochs = new Epochs(speciesManager);
+
+type RunUntilSolutionBtnProps = {
+  onClick: (runs: number) => void;
+  disabled: boolean;
+};
+
+const RunUntilSolutionBtn = (props: RunUntilSolutionBtnProps) => {
+  const [runs, setRuns] = useState(100);
+
+  const onChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+    const r = Number(e.target.value);
+    setRuns(r);
+  };
+  return (
+    <Row spacing={1}>
+      <Button onClick={() => props.onClick(runs)} disabled={props.disabled}>
+        Run {runs} Generations
+      </Button>
+      <input value={runs} onChange={onChange}></input>
+    </Row>
+  );
+};
 
 export const MainPage = () => {
   const [population, setPopulation] = useState<Population>();
   const [selected, setSelected] = useState<Individual>();
   const [selectedSpecie, setSelectedSpecie] = useState<Specie>();
-  const [generation, setGeneration] = useState<EvaluatedIndividual[]>();
+  const [running, setRunning] = useState(false);
 
   useEffect(() => {
     const setPopAsync = async () => {
-      setPopulation(await epochs.init(options, speciesManager));
+      setPopulation(await epochs.init(options));
     };
     setPopAsync();
   }, []);
@@ -59,15 +78,6 @@ export const MainPage = () => {
   const onHoverSpecie = (specie: Specie) => {
     setSelectedSpecie(specie);
   };
-
-  const RunUntilSolutionBtn = () => (
-    <Button
-      onClick={async () => setPopulation(await epochs.newEpochs(options))}
-      disabled={population?.foundSolution}
-    >
-      Run Until Solution
-    </Button>
-  );
 
   const InferencePanel = (
     <Panel width="100%">
@@ -89,9 +99,11 @@ export const MainPage = () => {
     Inference: InferencePanel,
     Charts: <ChartPage epochs={epochs} />,
     Simulation: (
-      <SimulationPage
-        individuals={speciesManager.species.flatMap((s) => s.population)}
-      />
+      <ErrorBoundary fallback={<h1>Error</h1>}>
+        <SimulationPage
+          individuals={speciesManager.species.flatMap((s) => s.population)}
+        />
+      </ErrorBoundary>
     ),
     Options: <OptionsPage setCurrentOptions={(o) => (options = o)} />,
   };
@@ -109,13 +121,22 @@ export const MainPage = () => {
         <Row spacing={1} $padding={1}>
           <Button
             onClick={async () => {
+              setRunning(true);
               setPopulation(await epochs.newEpoch(options));
+              setRunning(false);
             }}
-            disabled={!!population?.foundSolution}
+            disabled={!!population?.foundSolution || running}
           >
             Mutate Population
           </Button>
-          <RunUntilSolutionBtn />
+          <RunUntilSolutionBtn
+            onClick={async (runs) => {
+              setRunning(true);
+              setPopulation(await epochs.newEpochs(options, runs));
+              setRunning(false);
+            }}
+            disabled={population?.foundSolution || running}
+          />
         </Row>
       </Column>
     </FullScreen>

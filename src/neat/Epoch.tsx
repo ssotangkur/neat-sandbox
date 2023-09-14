@@ -3,31 +3,42 @@ import { Population, initalizePopulation, nextGeneration } from "./Population";
 import { SpeciesManager } from "./Speciation";
 
 export class Epochs {
-  public epochs: Population[];
+  public epochs: Epoch[];
+  public currentPopulation: Population | undefined;
 
-  constructor() {
+  constructor(private readonly speciesManager: SpeciesManager) {
     this.epochs = [];
   }
 
-  public async init(
-    options: PopulationOptions,
-    speciesManager: SpeciesManager
-  ) {
-    if (this.epochs.length === 0) {
-      this.epochs.push(await initalizePopulation(options, speciesManager));
+  public async init(options: PopulationOptions) {
+    if (!this.currentPopulation) {
+      const newPop = await initalizePopulation(options, this.speciesManager);
+      this.epochs.push(this.toEpoch(newPop));
+      this.currentPopulation = newPop;
     }
-    return this.currentEpoch!;
+    return this.currentPopulation;
+  }
+
+  private toEpoch(p: Population): Epoch {
+    return {
+      generation: p.generation,
+      best: p.best,
+      foundSolution: p.foundSolution,
+      minFitness: p.minFitness,
+      maxFitness: p.maxFitness,
+    };
   }
 
   public async newEpoch(options: PopulationOptions) {
-    const newEpoch = await nextGeneration(this.currentEpoch!, options);
-    this.epochs.push(newEpoch);
-    return newEpoch;
+    const newPop = await nextGeneration(this.currentPopulation!, options);
+    this.epochs.push(this.toEpoch(newPop));
+    this.currentPopulation = newPop;
+    return newPop;
   }
 
   public async newEpochs(options: PopulationOptions, numEpochs: number = 100) {
     let count = 0;
-    let e = this.currentEpoch;
+    let e = this.currentPopulation;
     while (!e?.foundSolution && count < numEpochs) {
       e = await this.newEpoch(options);
       count++;
@@ -38,8 +49,10 @@ export class Epochs {
   public clearEpochs() {
     this.epochs = [];
   }
-
-  public get currentEpoch(): Population | undefined {
-    return this.epochs[this.epochs.length - 1];
-  }
 }
+
+// A stripped down version of Population that we can keep in memory
+export type Epoch = Omit<
+  Population,
+  "speciesManager" | "individuals" | "species"
+>;
