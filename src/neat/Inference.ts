@@ -144,6 +144,8 @@ export class Kernel {
           );
           activations[activationIdx++] = activationFn(input);
         });
+        // increment activationIdx for the bias input, which acts like a hidden input
+        activationIdx++;
       } else {
         const layer = this.layers[currentLayer];
         layer.forEach((node) => {

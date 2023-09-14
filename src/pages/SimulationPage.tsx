@@ -9,6 +9,7 @@ import {
   RocketSimulation,
   createRandomTarget,
   defaultRocketConfig,
+  defaultSimConfig,
 } from "../simulation/RocketSimulation";
 import { RocketAgentRenderer } from "../components/three/RocketAgentRenderer";
 import { Canvas } from "@react-three/fiber";
@@ -70,10 +71,10 @@ export const SimulationPage = ({ individuals }: SimulationPageProps) => {
   const initializedRef = useRef(false);
 
   const resetSim = useCallback(() => {
-    const rocketSim = new RocketSimulation(defaultRocketConfig, {
-      target: createRandomTarget(),
-      boundsRadius: 200,
-    });
+    const rocketSim = new RocketSimulation(
+      defaultRocketConfig,
+      defaultSimConfig()
+    );
     initializedRef.current = false;
     const initSim = async () => {
       await rocketSim.init(individuals);

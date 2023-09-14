@@ -13,10 +13,11 @@ export const defaultRocketConfig: RocketConfig = {
   fuelCapacity: 2000,
 };
 
-export const defaultSimConfig: SimulationConfig = {
-  target: new Vector3(50, 50, 0),
+export const defaultSimConfig = (): SimulationConfig => ({
+  target: createRandomTarget(),
   boundsRadius: 200,
-};
+  maxSteps: 200,
+});
 
 export const createRandomTarget = () => {
   return new Vector3(Math.random() * 100 - 50, 50, Math.random() * 100 - 50);
@@ -45,6 +46,7 @@ export class RocketSimulation implements Simulation<Rocket> {
   private rockets: Rocket[] = [];
 
   private initialized = false;
+  private stepsCompleted = 0;
 
   constructor(
     public readonly options: RocketConfig,
@@ -55,6 +57,7 @@ export class RocketSimulation implements Simulation<Rocket> {
 
   public reset(freeWorld: boolean = true) {
     this.initialized = false;
+    this.stepsCompleted = 0;
 
     this.minFitness = Number.MAX_SAFE_INTEGER;
     this.maxFitness = Number.MIN_SAFE_INTEGER;
@@ -84,10 +87,15 @@ export class RocketSimulation implements Simulation<Rocket> {
   public step() {
     this.world?.step(); // TODO Automate this
     this.rockets.forEach((r) => r.step());
+    this.stepsCompleted++;
   }
 
   public active() {
-    return this.initialized && this.rockets.some((r) => r.alive);
+    return (
+      this.initialized &&
+      this.stepsCompleted < this.simConfig.maxSteps &&
+      this.rockets.some((r) => r.alive)
+    );
   }
 
   public evaluate() {

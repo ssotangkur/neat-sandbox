@@ -1,5 +1,4 @@
 import { Quaternion, Vector2, Vector3 } from "three";
-import { ThrustHandler } from "../components/three/RocketViz";
 import { vec3, quat } from "@react-three/rapier";
 import { Individual } from "../neat/Population";
 import {
@@ -25,6 +24,7 @@ export type RocketConfig = {
 export type SimulationConfig = {
   target: Vector3;
   boundsRadius: number; // how far from origin can the rocket be before going out of bounds
+  maxSteps: number;
 };
 
 export class Rocket implements Agent {
