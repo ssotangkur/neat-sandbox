@@ -1,9 +1,10 @@
 import { EvaluateIndividualsFunc } from "../neat/Options";
+import { nextGeneration } from "../neat/Population";
 import { evaluateRockets } from "../simulation/EvaluateRockets";
 import { HelloFunc, SumFunc, WorkerAction } from "../utils/useWorker";
 
 const helloFunc: HelloFunc = (a) => a + "World";
-const sumFunc: SumFunc = (a, b) => a + b;
+export const sumFunc: SumFunc = (a, b) => a + b;
 
 self.onmessage = <T extends keyof WorkerAction>(
   e: MessageEvent<{ action: T; args: Parameters<WorkerAction[T]> }>
@@ -25,6 +26,11 @@ self.onmessage = <T extends keyof WorkerAction>(
       evaluateRockets(
         ...(e.data.args as Parameters<EvaluateIndividualsFunc>)
       ).then((result) => self.postMessage(result));
+      break;
+    case "nextGeneration":
+      nextGeneration(
+        ...(e.data.args as Parameters<typeof nextGeneration>)
+      ).then(self.postMessage);
   }
 };
 

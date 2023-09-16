@@ -62,7 +62,7 @@ const ResetBtn = ({ onClick }: { onClick: () => void }) => {
 // };
 
 export type SimulationPageProps = {
-  individuals: Individual[];
+  individuals?: Individual[];
 };
 
 export const SimulationPage = ({ individuals }: SimulationPageProps) => {
@@ -74,6 +74,9 @@ export const SimulationPage = ({ individuals }: SimulationPageProps) => {
   const initializedRef = useRef(false);
 
   const resetSim = useCallback(() => {
+    if (!individuals) {
+      return;
+    }
     const rocketSim = new RocketSimulation(
       defaultRocketConfig,
       defaultSimConfig()
@@ -93,7 +96,7 @@ export const SimulationPage = ({ individuals }: SimulationPageProps) => {
     // Free resources when unmounting
     return () => {
       try {
-        sim.reset();
+        sim?.reset();
       } catch (error) {
         console.error(error);
       }
@@ -134,7 +137,6 @@ export const SimulationPage = ({ individuals }: SimulationPageProps) => {
       <Stats rocket={rockets[0]} /> 
         */}
         <ResetBtn onClick={resetSim} />
-        <Button onClick={() => invokeEval(individuals)}>Sum</Button>
       </ErrorBoundary>
     </DivRelative>
   );

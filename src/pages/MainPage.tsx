@@ -1,22 +1,26 @@
 import { ChangeEventHandler, useCallback, useEffect, useState } from "react";
-import { Individual, Population } from "../neat/Population";
+import {
+  EvaluatedIndividual,
+  Individual,
+  Population,
+} from "../neat/Population";
 import { Button } from "../ui/Button";
 import { Panel } from "../ui/Panel";
 import { Column } from "../ui/Column";
 import { Row } from "../ui/Row";
 import { FullScreen } from "../ui/FullScreen";
-import { XOREndCondition, evaluateIndividuals } from "../neat/Fitness";
 import { createOptions, readFromLocalStorage } from "../neat/Options";
-import { Specie, SpeciesManager } from "../neat/Speciation";
+import { Specie } from "../neat/Speciation";
 import { InferenceViz } from "../components/InferenceViz";
 import { Tabs } from "../ui/Tabs";
 import { SpeciationPage } from "./SpeciationPage";
-import { Epochs } from "../neat/Epoch";
+import { Epochs, toEpoch } from "../neat/Epoch";
 import { ChartPage } from "./ChartPage";
 import { SimulationPage } from "./SimulationPage";
 import { OptionsPage } from "./options/OptionsPage";
 import { ErrorBoundary } from "react-error-boundary";
 import { useWorker } from "../utils/useWorker";
+import { NeatMeta } from "../neat/NeatMeta";
 
 // Get current options from local storage or make some as default
 const { optionSet, currentOption } = readFromLocalStorage();
@@ -27,12 +31,11 @@ let options = optionKey
       count: 150,
       inputs: 2,
       outputs: 1,
-      evaluateIndividuals: evaluateIndividuals,
-      endCondition: XOREndCondition,
+      evalType: "XOR",
     });
 
-const speciesManager = new SpeciesManager();
-const epochs = new Epochs(speciesManager);
+const meta = new NeatMeta();
+const epochs = new Epochs(meta);
 
 type RunUntilSolutionBtnProps = {
   onClick: (runs: number) => void;
@@ -62,12 +65,32 @@ export const MainPage = () => {
   const [selectedSpecie, setSelectedSpecie] = useState<Specie>();
   const [running, setRunning] = useState(false);
 
-  const [msg, invoke] = useWorker("Hello", (a) => console.log(a));
-  const [sum, invokeSum] = useWorker("Sum", (a) => console.log(a));
+  const handleNextGen = useCallback(
+    (p: Population) => {
+      epochs.epochs.push(toEpoch(p));
+      setPopulation(p);
+    },
+    [epochs]
+  );
+  const updateEpoch = useCallback(
+    (p: {
+      minFitness: number;
+      maxFitness: number;
+      bestOverall: EvaluatedIndividual;
+      individuals: EvaluatedIndividual[];
+    }) => {
+      console.log(p);
+    },
+    []
+  );
+
+  // const [msg, invoke] = useWorker("EvalRockets", updateEpoch);
+  const [p, nextGen] = useWorker("nextGeneration", handleNextGen);
 
   useEffect(() => {
     const setPopAsync = async () => {
-      setPopulation(await epochs.init(options));
+      const pop = await epochs.init(options);
+      setPopulation(pop);
     };
     setPopAsync();
   }, []);
@@ -97,7 +120,6 @@ export const MainPage = () => {
         selected={selected}
         selectedSpecie={selectedSpecie}
         population={population}
-        speciesManager={speciesManager}
       />
     ),
     Inference: InferencePanel,
@@ -105,7 +127,7 @@ export const MainPage = () => {
     Simulation: (
       <ErrorBoundary fallback={<h1>Error</h1>}>
         <SimulationPage
-          individuals={speciesManager.species.flatMap((s) => s.population)}
+          individuals={population?.species.flatMap((s) => s.population)}
         />
       </ErrorBoundary>
     ),
@@ -133,6 +155,30 @@ export const MainPage = () => {
           >
             Mutate Population
           </Button>
+          {/* <Button
+            onClick={async () => {
+              if (population && population.individuals.length > 0) {
+                setRunning(true);
+                invoke(population.individuals);
+                setRunning(false);
+              }
+            }}
+            disabled={!!population?.foundSolution || running}
+          >
+            Mutate Population2
+          </Button> */}
+          <Button
+            onClick={async () => {
+              if (population && population.individuals.length > 0) {
+                setRunning(true);
+                nextGen(population, options);
+                setRunning(false);
+              }
+            }}
+            disabled={!!population?.foundSolution || running}
+          >
+            Next Gen
+          </Button>
           <RunUntilSolutionBtn
             onClick={async (runs) => {
               setRunning(true);
@@ -141,7 +187,6 @@ export const MainPage = () => {
             }}
             disabled={population?.foundSolution || running}
           />
-          <Button onClick={() => invoke("World")}>Invoke</Button>
         </Row>
       </Column>
     </FullScreen>

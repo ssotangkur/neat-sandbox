@@ -45,6 +45,6 @@ export const evaluateRockets: EvaluateIndividualsFunc = async (individuals) => {
   };
 };
 
-export const rocketEndCondition: EndCondition = (_, fitness) => {
+export const rocketEndCondition: EndCondition = () => {
   return false;
 };

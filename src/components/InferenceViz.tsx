@@ -3,6 +3,7 @@ import { Column } from "../ui/Column";
 import { Row } from "../ui/Row";
 import { useState } from "react";
 import { Individual } from "../neat/Population";
+import { predict } from "../neat/Inference";
 
 export type InferenceVizProps = {
   individual?: Individual;
@@ -25,7 +26,7 @@ export const InferenceViz = ({ individual }: InferenceVizProps) => {
     return onChange;
   };
 
-  const outputs = individual?.kernel?.predict(inputs);
+  const outputs = individual?.kernel ? predict(individual.kernel, inputs) : [];
 
   return (
     <>

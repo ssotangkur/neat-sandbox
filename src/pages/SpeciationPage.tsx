@@ -5,7 +5,7 @@ import { Column } from "../ui/Column";
 
 import { SpeciationViz, SpeciationVizProps } from "../components/SpeciationVis";
 
-import { Specie, SpeciesManager } from "../neat/Speciation";
+import { Specie, getTotalPopulation } from "../neat/Speciation";
 import { KeyValueTable } from "../ui/KeyValueTable";
 import { SpecieStatViz } from "../components/SpecieStatViz";
 
@@ -13,7 +13,6 @@ export type SpeciationPageProps = {
   selected?: Individual;
   selectedSpecie?: Specie;
   population?: Population;
-  speciesManager: SpeciesManager;
 } & SpeciationVizProps;
 
 export const SpeciationPage = ({
@@ -22,14 +21,15 @@ export const SpeciationPage = ({
   selected,
   selectedSpecie,
   population,
-  speciesManager,
 }: SpeciationPageProps) => {
   const data = {
     "Max Fitness": population?.maxFitness,
-    "Species Count": speciesManager.species.length,
-    Population: speciesManager.getTotalPopulation(),
+    "Species Count": population?.species.length,
+    Population: population?.species
+      ? getTotalPopulation(population.species)
+      : 0,
     Generation: population?.generation,
-    "Dyn Compatability": speciesManager.dynamicCompatibilityThreshold,
+    "Dyn Compatability": population?.meta.dynamicCompatibilityThreshold,
     Solution: population?.foundSolution ? "true" : "false",
   };
 
@@ -45,8 +45,7 @@ export const SpeciationPage = ({
         <SpeciationViz
           onHover={onHover}
           onHoverSpecie={onHoverSpecie}
-          speciesManager={speciesManager}
-          species={population?.species}
+          population={population}
         />
       </Panel>
       <Panel $constrainchildwidth $overflowX="auto" $noshrink>
@@ -56,7 +55,9 @@ export const SpeciationPage = ({
         <SpecieStatViz specie={selectedSpecie} />
       </Panel>
       <Panel $constrainchildwidth $noshrink>
-        <GenoTypeViz neuralNet={selected?.neuralNet} />
+        {population?.meta ? (
+          <GenoTypeViz neuralNet={selected?.neuralNet} meta={population.meta} />
+        ) : null}
       </Panel>
     </Column>
   );

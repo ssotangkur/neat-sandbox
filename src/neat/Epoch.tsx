@@ -1,37 +1,32 @@
+import { NeatMeta } from "./NeatMeta";
 import { PopulationOptions } from "./Options";
 import { Population, initalizePopulation, nextGeneration } from "./Population";
-import { SpeciesManager } from "./Speciation";
 
 export class Epochs {
   public epochs: Epoch[];
   public currentPopulation: Population | undefined;
 
-  constructor(private readonly speciesManager: SpeciesManager) {
+  constructor(private readonly meta: NeatMeta) {
     this.epochs = [];
   }
 
   public async init(options: PopulationOptions) {
     if (!this.currentPopulation) {
-      const newPop = await initalizePopulation(options, this.speciesManager);
-      this.epochs.push(this.toEpoch(newPop));
+      const newPop = await initalizePopulation(options, this.meta);
+      this.epochs.push(toEpoch(newPop));
       this.currentPopulation = newPop;
     }
     return this.currentPopulation;
   }
 
-  private toEpoch(p: Population): Epoch {
-    return {
-      generation: p.generation,
-      best: p.best,
-      foundSolution: p.foundSolution,
-      minFitness: p.minFitness,
-      maxFitness: p.maxFitness,
-    };
-  }
-
   public async newEpoch(options: PopulationOptions) {
     const newPop = await nextGeneration(this.currentPopulation!, options);
-    this.epochs.push(this.toEpoch(newPop));
+    // const newPop = await runWorker(
+    //   "nextGeneration",
+    //   this.currentPopulation!,
+    //   options
+    // );
+    this.epochs.push(toEpoch(newPop));
     this.currentPopulation = newPop;
     return newPop;
   }
@@ -50,6 +45,17 @@ export class Epochs {
     this.epochs = [];
   }
 }
+
+export const toEpoch = (p: Population): Epoch => {
+  return {
+    generation: p.generation,
+    best: p.best,
+    foundSolution: p.foundSolution,
+    minFitness: p.minFitness,
+    maxFitness: p.maxFitness,
+    meta: p.meta,
+  };
+};
 
 // A stripped down version of Population that we can keep in memory
 export type Epoch = Omit<

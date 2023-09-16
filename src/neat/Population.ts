@@ -1,18 +1,33 @@
 import _ from "lodash";
 import { createSimpleNeuralNet } from "./NeuralNetFactory";
-import { NeuralNet } from "./NeuralNet";
+import { NeuralNet, getNeuronById } from "./NeuralNet";
 import { Gene } from "./Gene";
 import { Neuron, NeuronType } from "./Neuron";
 import { Kernel } from "./Inference";
-import { Specie, SpeciesManager } from "./Speciation";
-import { PopulationOptions } from "./Options";
+import {
+  Specie,
+  clearSpeciesMap,
+  copyElites,
+  removeEmptySpecies,
+  removeStagnantSpecies,
+  reproduce,
+  setTargetPopulations,
+  speciate,
+  updateDynamicCompatibility,
+} from "./Speciation";
+import {
+  PopulationOptions,
+  getEndCondition,
+  getEvaluateIndividuals,
+} from "./Options";
+import { NeatMeta, getInnovation } from "./NeatMeta";
 
 export const initalizePopulation = async (
   options: PopulationOptions,
-  speciesManager: SpeciesManager
+  meta: NeatMeta
 ): Promise<Population> => {
   const newGen = _.range(options.count)
-    .map(() => createSimpleNeuralNet(options.inputs, options.outputs))
+    .map(() => createSimpleNeuralNet(options.inputs, options.outputs, meta))
     .map((nn) => {
       return {
         neuralNet: nn,
@@ -20,18 +35,23 @@ export const initalizePopulation = async (
       } as Individual;
     });
   const { minFitness, maxFitness, bestOverall, individuals } =
-    await options.evaluateIndividuals(newGen);
-  speciesManager.speciate(individuals, options.speciationOptions);
+    await getEvaluateIndividuals(options.evalType)(newGen);
+  const species: Specie[] = [];
+  speciate(species, individuals, options.speciationOptions, meta);
 
   return {
     generation: 0,
     maxFitness,
     minFitness,
     best: bestOverall,
-    foundSolution: options.endCondition(bestOverall.kernel!, maxFitness),
-    speciesManager,
-    individuals: speciesManager.species.flatMap((s) => s.population),
-    species: speciesManager.species,
+    foundSolution: getEndCondition(options.evalType)(
+      bestOverall.kernel!,
+      maxFitness
+    ),
+    speciesManager: meta,
+    individuals: species.flatMap((s) => s.population),
+    species: species,
+    meta,
   };
 };
 
@@ -51,29 +71,32 @@ export type Population = {
   minFitness: number;
   best: Individual;
   foundSolution: boolean;
-  speciesManager: SpeciesManager;
+  speciesManager: NeatMeta;
   individuals: EvaluatedIndividual[];
   species: Specie[];
+  meta: NeatMeta;
 };
 
 export const nextGeneration = async (
   p: Population,
   options: PopulationOptions
 ): Promise<Population> => {
-  p.speciesManager.setTargetPopulations(p, options);
-  const newGeneration = p.speciesManager.reproduce(options);
-  const elites = p.speciesManager.copyElites();
+  setTargetPopulations(p, options);
+  const newGeneration = reproduce(p.species, options, p.meta);
+  const elites = copyElites(p.species);
   const nextGen = [...newGeneration, ...elites];
 
   const { minFitness, maxFitness, bestOverall, individuals } =
-    await options.evaluateIndividuals(nextGen);
-  p.speciesManager.clearSpeciesMap(); // Clear out all individuals in Specie before speciation
-  p.speciesManager.speciate(individuals, options.speciationOptions);
-  p.speciesManager.removeEmptySpecies();
-  p.speciesManager.removeStagnantSpecies(options.speciationOptions);
-  p.speciesManager.updateDynamicCompatibility(
+    await getEvaluateIndividuals(options.evalType)(nextGen);
+  clearSpeciesMap(p.species); // Clear out all individuals in Specie before speciation
+  speciate(p.species, individuals, options.speciationOptions, p.speciesManager);
+  p.species = removeEmptySpecies(p.species);
+  p.species = removeStagnantSpecies(p.species, options.speciationOptions);
+  updateDynamicCompatibility(
+    p.species,
     p.generation,
-    options.speciationOptions
+    options.speciationOptions,
+    p.speciesManager
   );
 
   return {
@@ -81,10 +104,14 @@ export const nextGeneration = async (
     maxFitness,
     minFitness,
     best: bestOverall,
-    foundSolution: options.endCondition(bestOverall.kernel!, maxFitness),
+    foundSolution: getEndCondition(options.evalType)(
+      bestOverall.kernel!,
+      maxFitness
+    ),
     speciesManager: p.speciesManager,
-    individuals: p.speciesManager.species.flatMap((s) => s.population),
-    species: p.speciesManager.species,
+    individuals: p.species.flatMap((s) => s.population),
+    species: p.species,
+    meta: p.meta,
   };
 };
 
@@ -92,7 +119,8 @@ export const crossOver = (
   a: NeuralNet,
   aFitness: number,
   b: NeuralNet,
-  bFitness: number
+  bFitness: number,
+  meta: NeatMeta
 ): NeuralNet => {
   const aIsMoreOrEquallyFit = aFitness >= bFitness;
   const bIsMoreOrEquallyFit = bFitness >= aFitness;
@@ -103,7 +131,7 @@ export const crossOver = (
     const geneA = a.genes[aIndex];
     const geneB = b.genes[bIndex];
 
-    if (geneA.innovation < geneB.innovation) {
+    if (getInnovation(geneA, meta) < getInnovation(geneB, meta)) {
       // geneA is disjoint
       // if it is more or equal fitness then included it
       if (aIsMoreOrEquallyFit) {
@@ -111,7 +139,7 @@ export const crossOver = (
       }
       // increment the lower index no matter what
       aIndex++;
-    } else if (geneA.innovation > geneB.innovation) {
+    } else if (getInnovation(geneA, meta) > getInnovation(geneB, meta)) {
       if (bIsMoreOrEquallyFit) {
         newGenes.push(geneB);
       }
@@ -155,8 +183,8 @@ export const crossOver = (
 
   const newNeurons: Neuron[] = [];
   usedNeurons.forEach((neuron) => {
-    const neuronA = a.getNeuronById(neuron);
-    const neuronB = b.getNeuronById(neuron);
+    const neuronA = getNeuronById(a, neuron);
+    const neuronB = getNeuronById(b, neuron);
 
     if (neuronA && neuronB) {
       newNeurons.push(_.sample([neuronA, neuronB])!);
@@ -167,5 +195,5 @@ export const crossOver = (
     }
   });
 
-  return new NeuralNet(newNeurons, newGenes);
+  return new NeuralNet(newNeurons, newGenes, meta);
 };

@@ -10,8 +10,7 @@ export type PartialPopulationOptions = {
   count: number;
   inputs: number;
   outputs: number;
-  evaluateIndividuals: EvaluateIndividualsFunc;
-  endCondition: EndCondition;
+  evalType: EvalType;
   mutationOptions?: Partial<MutationOptions>;
   speciationOptions?: Partial<SpeciationOptions>;
 };
@@ -73,8 +72,7 @@ export type PopulationOptions = {
   count: number;
   inputs: number;
   outputs: number;
-  evaluateIndividuals: EvaluateIndividualsFunc;
-  endCondition: EndCondition;
+  evalType: EvalType;
   mutationOptions: MutationOptions;
   speciationOptions: SpeciationOptions;
 };
@@ -112,8 +110,6 @@ export const serializeableOption = (options?: PopulationOptions) => {
   }
   const serializeable: SerializeablePopulationOptions = {
     ...options,
-    evalType:
-      options.evaluateIndividuals === evaluateIndividuals ? "XOR" : "Rocket",
   };
   return serializeable;
 };
@@ -123,8 +119,6 @@ export const materializeOption = (
 ) => {
   const result: PopulationOptions = {
     ...serializeable,
-    evaluateIndividuals: getEvaluateIndividuals(serializeable.evalType),
-    endCondition: getEndCondition(serializeable.evalType),
   };
   return result;
 };

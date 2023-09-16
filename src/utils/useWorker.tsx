@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import MyWorker from "../workers/EvalRockets?worker";
 import { EvaluateIndividualsFunc } from "../neat/Options";
+import { nextGeneration } from "../neat/Population";
 
 export type HelloFunc = (a0: string) => string;
 export type SumFunc = (a0: number, a1: number) => number;
@@ -9,6 +10,7 @@ export type WorkerAction = {
   Hello: HelloFunc;
   Sum: SumFunc;
   EvalRockets: EvaluateIndividualsFunc;
+  nextGeneration: typeof nextGeneration;
 };
 
 export type WorkerInvocationMsg<K extends keyof WorkerAction> = {

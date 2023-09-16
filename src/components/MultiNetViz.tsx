@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { NeuralNetViz } from "./NeuralNetViz";
-import { Individual } from "../neat/Population";
+import { EvaluatedIndividual } from "../neat/Population";
+import { NeatMeta } from "../neat/NeatMeta";
 
 const Bordered = styled.div<{ selected?: boolean }>`
   border: solid 1px black;
@@ -9,18 +10,20 @@ const Bordered = styled.div<{ selected?: boolean }>`
 `;
 
 export type HoverAwareProps = {
-  onHover?: (i: Individual) => void;
-  offHover?: (i: Individual) => void;
+  onHover?: (i: EvaluatedIndividual) => void;
+  offHover?: (i: EvaluatedIndividual) => void;
 };
 
 const HoverAwareNeuralNet = ({
   individual,
+  meta,
   selected,
   onHover,
   offHover,
 }: {
-  individual: Individual;
+  individual: EvaluatedIndividual;
   selected?: boolean;
+  meta: NeatMeta;
 } & HoverAwareProps) => {
   return (
     <Bordered
@@ -32,19 +35,21 @@ const HoverAwareNeuralNet = ({
         offHover?.(individual);
       }}
     >
-      <NeuralNetViz individual={individual} />
+      <NeuralNetViz individual={individual} meta={meta} />
     </Bordered>
   );
 };
 
 export type MultiNetVixProps = {
-  individuals: Individual[];
-  selected?: Individual;
+  individuals: EvaluatedIndividual[];
+  selected?: EvaluatedIndividual;
+  meta: NeatMeta;
 } & HoverAwareProps;
 
 export const MultiNetViz = ({
   individuals,
   selected,
+  meta,
   onHover,
   offHover,
 }: MultiNetVixProps) => {
@@ -57,6 +62,7 @@ export const MultiNetViz = ({
           onHover={onHover}
           offHover={offHover}
           selected={i === selected}
+          meta={meta}
         />
       ))}
     </>

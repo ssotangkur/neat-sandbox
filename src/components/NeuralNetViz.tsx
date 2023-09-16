@@ -1,4 +1,6 @@
-import { Individual } from "../neat/Population";
+import { NeatMeta, getInnovation } from "../neat/NeatMeta";
+import { getEnabledGenes } from "../neat/NeuralNet";
+import { EvaluatedIndividual } from "../neat/Population";
 
 const NODE_SIZE_PX = 30;
 const WEIGHTS_WIDTH_PX = 60;
@@ -84,16 +86,17 @@ const layerHeight = (nodeCount: number) => {
 };
 
 export type NeuralNetVizProps = {
-  individual: Individual;
+  individual: EvaluatedIndividual;
+  meta: NeatMeta;
 };
 
-export const NeuralNetViz = ({ individual }: NeuralNetVizProps) => {
+export const NeuralNetViz = ({ individual, meta }: NeuralNetVizProps) => {
   const { kernel } = individual;
   if (!kernel) {
     return null;
   }
   const { neuralNet, layers } = kernel;
-  const { enabledGenes } = neuralNet;
+  const enabledGenes = getEnabledGenes(neuralNet);
 
   const maxNodesInAnyLayer = layers.reduce(
     (maxNodes, layerNodes) => Math.max(layerNodes.length, maxNodes),
@@ -163,7 +166,7 @@ export const NeuralNetViz = ({ individual }: NeuralNetVizProps) => {
         }
         return (
           <SVGWeightLine
-            key={gene.innovation}
+            key={getInnovation(gene, meta)}
             x1={startPos[0]}
             y1={startPos[1]}
             x2={endPos[0]}

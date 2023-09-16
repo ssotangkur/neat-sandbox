@@ -1,9 +1,10 @@
-import { Gene } from "../neat/Gene";
+import { Gene, getTopologicalKey } from "../neat/Gene";
 import { NeuralNet } from "../neat/NeuralNet";
 import { styled } from "styled-components";
 import { Neuron } from "../neat/Neuron";
 import { Row } from "../ui/Row";
 import { Column } from "../ui/Column";
+import { NeatMeta, getInnovation } from "../neat/NeatMeta";
 
 const RowNames = styled.div`
   display: flex;
@@ -28,11 +29,11 @@ const CellContainer = styled.div<{ $enabled: boolean }>`
   white-space: nowrap;
 `;
 
-const GeneComp = ({ gene }: { gene: Gene }) => {
+const GeneComp = ({ gene, meta }: { gene: Gene; meta: NeatMeta }) => {
   return (
     <CellContainer $enabled={gene.enabled}>
-      <div>{gene.innovation}</div>
-      <div>{gene.topologicalKey}</div>
+      <div>{getInnovation(gene, meta)}</div>
+      <div>{getTopologicalKey(gene)}</div>
       <div>{gene.weight.toFixed(2)}</div>
       <div>{gene.enabled ? "true" : "false"}</div>
     </CellContainer>
@@ -49,7 +50,13 @@ const NeuronComp = ({ neuron }: { neuron: Neuron }) => {
   );
 };
 
-export const GenoTypeViz = ({ neuralNet }: { neuralNet?: NeuralNet }) => {
+export const GenoTypeViz = ({
+  neuralNet,
+  meta,
+}: {
+  neuralNet?: NeuralNet;
+  meta: NeatMeta;
+}) => {
   const { genes, neurons } = neuralNet ?? {
     genes: [] as Gene[],
     neurons: [] as Neuron[],
@@ -66,7 +73,7 @@ export const GenoTypeViz = ({ neuralNet }: { neuralNet?: NeuralNet }) => {
         </RowNames>
         <Row overflow="auto">
           {genes.map((gene) => (
-            <GeneComp key={gene.innovation} gene={gene} />
+            <GeneComp key={getInnovation(gene, meta)} gene={gene} meta={meta} />
           ))}
         </Row>
       </Row>

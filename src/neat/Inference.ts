@@ -8,7 +8,7 @@
 import _ from "lodash";
 import { Gene } from "./Gene";
 import { Neuron, getActivationFunction } from "./Neuron";
-import { NeuralNet } from "./NeuralNet";
+import { NeuralNet, getEnabledGenes } from "./NeuralNet";
 
 type Node = {
   dependencies: number[];
@@ -126,7 +126,10 @@ export class Kernel {
   public layers: Node[][];
 
   constructor(public neuralNet: NeuralNet) {
-    this.layers = segmentIntoLayers(neuralNet.neurons, neuralNet.enabledGenes);
+    this.layers = segmentIntoLayers(
+      neuralNet.neurons,
+      getEnabledGenes(neuralNet)
+    );
   }
 
   // public predict(inputs: number[]): number[] {

@@ -1,9 +1,10 @@
-import { NeuralNet } from "./NeuralNet";
+import { NeuralNet, getEnabledGenes, getMaxIdNeuron } from "./NeuralNet";
 import { Activation, Neuron } from "./Neuron";
-import { Gene } from "./Gene";
+import { Gene, clone, getTopologicalKey } from "./Gene";
 import _ from "lodash";
 import { Individual } from "./Population";
 import { MutationOptions, PopulationOptions } from "./Options";
+import { NeatMeta, getInnovation, registerGene } from "./NeatMeta";
 
 export type MutationParameters = {
   addGeneRate: number;
@@ -56,10 +57,17 @@ const willCreateCycle = (nn: NeuralNet, start: number, end: number) => {
  * @param newGenes
  * @returns
  */
-const replaceGenes = (genes: Gene[], newGenes: Gene[]): Gene[] => {
+const replaceGenes = (
+  genes: Gene[],
+  newGenes: Gene[],
+  meta: NeatMeta
+): Gene[] => {
   const filtered = genes.filter(
     (origGene) =>
-      !newGenes.some((newGene) => origGene.innovation === newGene.innovation)
+      !newGenes.some(
+        (newGene) =>
+          getInnovation(origGene, meta) === getInnovation(newGene, meta)
+      )
   );
   return [...filtered, ...newGenes];
 };
@@ -67,8 +75,8 @@ const replaceGenes = (genes: Gene[], newGenes: Gene[]): Gene[] => {
 /**
  * Randomly adds a link between neurons
  */
-export const addRandomLink = (nn: NeuralNet): NeuralNet => {
-  const geneTopoKeySet = new Set(nn.genes.map((g) => g.topologicalKey));
+export const addRandomLink = (nn: NeuralNet, meta: NeatMeta): NeuralNet => {
+  const geneTopoKeySet = new Set(nn.genes.map((g) => getTopologicalKey(g)));
   let foundNewGene = false;
   let tries = 0;
   const MAX_TRIES = 100;
@@ -100,9 +108,10 @@ export const addRandomLink = (nn: NeuralNet): NeuralNet => {
     // Found a suitable gene, let's make it
     foundNewGene = true;
     const newGene = new Gene(start.id, end.id, _.random(-1, 1, true));
+    registerGene(newGene, meta);
     // console.log("ADDING GENE " + newGene.topologicalKey);
 
-    return new NeuralNet([...nn.neurons], [...nn.genes, newGene]);
+    return new NeuralNet([...nn.neurons], [...nn.genes, newGene], meta);
   }
 
   console.error("Unable to mutate link. Too many tries.");
@@ -120,17 +129,18 @@ export const addRandomLink = (nn: NeuralNet): NeuralNet => {
  */
 export const addRandomNode = (
   nn: NeuralNet,
-  activationForNewNeurons: Activation
+  activationForNewNeurons: Activation,
+  meta: NeatMeta
 ): NeuralNet => {
-  const geneToSplit = _.sample(nn.enabledGenes); // Only allow splitting of enabled genes
+  const geneToSplit = _.sample(getEnabledGenes(nn)); // Only allow splitting of enabled genes
   if (!geneToSplit) {
     console.log("No genes to split, cannot add random node");
     return nn;
   }
-  const clonedGeneToSplit = geneToSplit.clone({ enabled: false });
+  const clonedGeneToSplit = clone(geneToSplit, { enabled: false });
 
   const newNeuron = new Neuron(
-    nn.maxIdNeuron.id + 1,
+    getMaxIdNeuron(nn).id + 1,
     "hidden",
     activationForNewNeurons
   );
@@ -140,48 +150,37 @@ export const addRandomNode = (
     newNeuron.id,
     clonedGeneToSplit.weight
   );
+  registerGene(gene1, meta);
 
   const gene2 = new Gene(
     newNeuron.id,
     clonedGeneToSplit.outNeuron,
     clonedGeneToSplit.weight
   );
+  registerGene(gene2, meta);
 
   const newNeurons = [...nn.neurons, newNeuron];
-  const newGenes = replaceGenes(nn.genes, [clonedGeneToSplit, gene1, gene2]);
+  const newGenes = replaceGenes(
+    nn.genes,
+    [clonedGeneToSplit, gene1, gene2],
+    meta
+  );
 
-  // console.log(
-  //   "Neuron " +
-  //     newNeuron.id +
-  //     " added between " +
-  //     clonedGeneToSplit.inNeuron +
-  //     " and " +
-  //     clonedGeneToSplit.outNeuron
-  // );
-
-  return new NeuralNet(newNeurons, newGenes);
+  return new NeuralNet(newNeurons, newGenes, meta);
 };
 
-export const mutateWeight = (nn: NeuralNet): NeuralNet => {
-  const gene = _.sample(nn.enabledGenes);
+export const mutateWeight = (nn: NeuralNet, meta: NeatMeta): NeuralNet => {
+  const gene = _.sample(getEnabledGenes(nn));
   if (!gene) {
     return nn;
   }
   const change = _.random(-1, 1, true);
   const newWeight = gene.weight + change;
   const newGene = new Gene(gene.inNeuron, gene.outNeuron, newWeight);
-  const newGenes = replaceGenes(nn.genes, [newGene]);
+  registerGene(newGene, meta);
+  const newGenes = replaceGenes(nn.genes, [newGene], meta);
 
-  // console.log(
-  //   "Mutating weight on " +
-  //     gene.topologicalKey +
-  //     " prev:" +
-  //     gene.weight +
-  //     " new:" +
-  //     newWeight
-  // );
-
-  return new NeuralNet(nn.neurons, newGenes);
+  return new NeuralNet(nn.neurons, newGenes, meta);
 };
 
 /**
@@ -190,11 +189,12 @@ export const mutateWeight = (nn: NeuralNet): NeuralNet => {
  */
 export const mutateIndividual = (
   individual: Individual,
-  options: MutationOptions
+  options: MutationOptions,
+  meta: NeatMeta
 ): Individual => {
   let result = {
     ...individual,
-    neuralNet: mutateNN(individual.neuralNet, options),
+    neuralNet: mutateNN(individual.neuralNet, options, meta),
   };
 
   return result;
@@ -202,17 +202,18 @@ export const mutateIndividual = (
 
 export const mutateNN = (
   nn: NeuralNet,
-  options: MutationOptions
+  options: MutationOptions,
+  meta: NeatMeta
 ): NeuralNet => {
   let result = nn;
   if (Math.random() < options.addGeneRate) {
-    result = addRandomLink(result);
+    result = addRandomLink(result, meta);
   }
   if (Math.random() < options.addNeuronRate) {
-    result = addRandomNode(result, options.activationForNewNeurons);
+    result = addRandomNode(result, options.activationForNewNeurons, meta);
   }
   if (Math.random() < options.weightChangeRate) {
-    result = mutateWeight(result);
+    result = mutateWeight(result, meta);
   }
   return result;
 };
@@ -221,7 +222,11 @@ export const mutateNN = (
  * Ensures at least one mutation is tried
  * @param nn
  */
-export const mutateSingle = (nn: NeuralNet, options: MutationOptions) => {
+export const mutateSingle = (
+  nn: NeuralNet,
+  options: MutationOptions,
+  meta: NeatMeta
+) => {
   const totalPct =
     options.addGeneRate +
     options.addNeuronRate +
@@ -231,21 +236,24 @@ export const mutateSingle = (nn: NeuralNet, options: MutationOptions) => {
 
   rand -= options.addGeneRate;
   if (rand <= 0) {
-    return addRandomLink(nn);
+    return addRandomLink(nn, meta);
   }
 
   rand -= options.addNeuronRate;
   if (rand <= 0) {
-    return addRandomNode(nn, options.activationForNewNeurons);
+    return addRandomNode(nn, options.activationForNewNeurons, meta);
   }
 
   rand -= options.weightChangeRate;
-  return mutateWeight(nn);
+  return mutateWeight(nn, meta);
 };
 
 export const mutate = (
   individuals: Individual[],
-  options: PopulationOptions
+  options: PopulationOptions,
+  meta: NeatMeta
 ): Individual[] => {
-  return individuals.map((i) => mutateIndividual(i, options.mutationOptions));
+  return individuals.map((i) =>
+    mutateIndividual(i, options.mutationOptions, meta)
+  );
 };

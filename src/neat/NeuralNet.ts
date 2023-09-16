@@ -1,48 +1,44 @@
 import { Gene } from "./Gene";
+import { NeatMeta, getInnovation, registerGene } from "./NeatMeta";
 import { Neuron } from "./Neuron";
 import _ from "lodash";
 
+export const getNeuronById = (nn: NeuralNet, id: number) => {
+  return nn.idToNeuronMap.get(id);
+};
+
+export const hasInnovation = (nn: NeuralNet, innovation: number) => {
+  return nn.innovationSet.has(innovation);
+};
+
+/**
+ * @returns the neuron with the highest id
+ */
+export const getMaxIdNeuron = (nn: NeuralNet) => {
+  return nn.neurons.reduce((maxSoFar, neuron) =>
+    maxSoFar.id > neuron.id ? maxSoFar : neuron
+  );
+};
+
+export const getEnabledGenes = (nn: NeuralNet) => {
+  return nn.genes.filter((gene) => gene.enabled);
+};
+
 export class NeuralNet {
-  private idToNeuronMap = new Map<number, Neuron>();
-  private innovationSet = new Set<number>();
+  public idToNeuronMap = new Map<number, Neuron>();
+  public innovationSet = new Set<number>();
 
   constructor(
     public readonly neurons: Neuron[],
-    public readonly genes: Gene[]
+    public readonly genes: Gene[],
+    meta: NeatMeta
   ) {
     // Sort on creation so nobody else has to
+    genes.forEach((g) => registerGene(g, meta));
     neurons.sort((a, b) => a.id - b.id);
     neurons.forEach((n) => this.idToNeuronMap.set(n.id, n));
-    genes.sort((a, b) => a.innovation - b.innovation);
-    genes.forEach((g) => this.innovationSet.add(g.innovation));
-  }
-
-  get enabledGenes() {
-    return this.genes.filter((gene) => gene.enabled);
-  }
-
-  /**
-   * @returns the neuron with the highest id
-   */
-  get maxIdNeuron() {
-    return this.neurons.reduce((maxSoFar, neuron) =>
-      maxSoFar.id > neuron.id ? maxSoFar : neuron
-    );
-  }
-
-  public clone(override?: Partial<NeuralNet>) {
-    return new NeuralNet(
-      override?.neurons ?? this.neurons,
-      override?.genes ?? this.genes
-    );
-  }
-
-  public getNeuronById(id: number) {
-    return this.idToNeuronMap.get(id);
-  }
-
-  public hasInnovation(innovation: number) {
-    return this.innovationSet.has(innovation);
+    genes.sort((a, b) => getInnovation(a, meta) - getInnovation(b, meta));
+    genes.forEach((g) => this.innovationSet.add(getInnovation(g, meta)));
   }
 }
 
@@ -65,10 +61,3 @@ export const testGenes: Gene[] = [
   new Gene(1, 7, -0.3),
   new Gene(7, 4, 1.4),
 ];
-
-export const testNeuralNet = new NeuralNet(testNeurons, testGenes);
-
-export const simpleNet = new NeuralNet(
-  [n1, n2, n3, n4, n5],
-  [new Gene(1, 5, -2), new Gene(2, 5, 1), new Gene(3, 5, 1), new Gene(5, 4, 1)]
-);
