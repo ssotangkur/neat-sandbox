@@ -5,7 +5,6 @@ import _ from "lodash";
 import { EvaluatedIndividual } from "./Population";
 import { MutationOptions, PopulationOptions } from "./Options";
 import { NeatMeta, getInnovation, registerGene } from "./NeatMeta";
-import gaussian from "gaussian";
 
 export type MutationParameters = {
   addGeneRate: number;

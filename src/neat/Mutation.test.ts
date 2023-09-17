@@ -2,7 +2,6 @@ import { describe, it, vi } from "vitest";
 import { mutateGene, mutateWeights } from "./Mutation";
 import { Gene } from "./Gene";
 import { DefaultMutationOptions, MutationOptions } from "./Options";
-import { NeuralNet } from "./NeuralNet";
 import { createSimpleNeuralNet } from "./NeuralNetFactory";
 import { NeatMeta } from "./NeatMeta";
 import _ from "lodash";
