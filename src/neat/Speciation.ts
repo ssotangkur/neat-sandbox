@@ -127,7 +127,7 @@ export const reproduce = (
           options.mutationOptions,
           meta
         );
-        return { ...parent, neuralNet: mutated } as Individual;
+        return { ...parent, neuralNet: mutated } as EvaluatedIndividual;
       });
       return nextGen;
     }
@@ -136,9 +136,9 @@ export const reproduce = (
       const [a, b] = _.sampleSize(potentialParents, 2);
       const nn = crossOver(
         a.neuralNet,
-        a.fitness!,
+        a.fitness,
         b.neuralNet,
-        b.fitness!,
+        b.fitness,
         meta
       );
       const ABIsSame = compare(a, b, options.speciationOptions, meta) === 0;
@@ -162,8 +162,14 @@ export const reproduce = (
   return newGeneration;
 };
 
-export const copyElites = (species: Specie[]): Individual[] => {
-  return species.flatMap((s) => s.population.slice(0, s.numElites));
+export const copyElites = (species: Specie[]): EvaluatedIndividual[] => {
+  return species.flatMap((s) => {
+    // promote the best elite as the best specimen of the species
+    if (s.population.length) {
+      s.bestSpecimen = s.population[0]; // since its sorted, first is best
+    }
+    return s.population.slice(0, s.numElites);
+  });
 };
 
 export const getTotalPopulation = (species: Specie[]) => {
@@ -299,8 +305,12 @@ export const add = (specie: Specie, individual: EvaluatedIndividual) => {
   individual.speciesId = specie.specieId;
   if (individual.fitness > specie.bestSpecimen.fitness) {
     specie.bestSpecimen = individual;
-    // reset the stagnation count
-    specie.genSinceImprovement = 0;
+
+    if (individual.fitness > specie.allTimeBest) {
+      specie.allTimeBest = individual.fitness;
+      // reset the stagnation count
+      specie.genSinceImprovement = 0;
+    }
   }
   specie.population.push(individual);
 };
@@ -313,6 +323,7 @@ export class Specie {
   public numSelected: number = 0;
   public numElites: number = 0;
   public bestSpecimen: EvaluatedIndividual;
+  public allTimeBest: number = 0;
   public genSinceImprovement: number = 0; // # of generations that have passed since we got a better specimen
 
   constructor(
@@ -359,8 +370,8 @@ const compareNN = (
 };
 
 const compare = (
-  a: Individual,
-  b: Individual,
+  a: EvaluatedIndividual,
+  b: EvaluatedIndividual,
   options: SpeciationOptions,
   meta: NeatMeta
 ) => {

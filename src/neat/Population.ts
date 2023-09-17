@@ -48,7 +48,6 @@ export const initalizePopulation = async (
       bestOverall.kernel!,
       maxFitness
     ),
-    speciesManager: meta,
     individuals: species.flatMap((s) => s.population),
     species: species,
     meta,
@@ -69,9 +68,8 @@ export type Population = {
   generation: number;
   maxFitness: number;
   minFitness: number;
-  best: Individual;
+  best: EvaluatedIndividual;
   foundSolution: boolean;
-  speciesManager: NeatMeta;
   individuals: EvaluatedIndividual[];
   species: Specie[];
   meta: NeatMeta;
@@ -82,22 +80,23 @@ export const nextGeneration = async (
   options: PopulationOptions
 ): Promise<Population> => {
   setTargetPopulations(p, options);
-  const newGeneration = reproduce(p.species, options, p.meta);
+  const offspring = reproduce(p.species, options, p.meta);
   const elites = copyElites(p.species);
-  const nextGen = [...newGeneration, ...elites];
+  const nextGen = [...offspring, ...elites];
 
   const { minFitness, maxFitness, bestOverall, individuals } =
     await getEvaluateIndividuals(options.evalType)(nextGen);
   clearSpeciesMap(p.species); // Clear out all individuals in Specie before speciation
-  speciate(p.species, individuals, options.speciationOptions, p.speciesManager);
+  speciate(p.species, individuals, options.speciationOptions, p.meta);
   p.species = removeEmptySpecies(p.species);
   p.species = removeStagnantSpecies(p.species, options.speciationOptions);
   updateDynamicCompatibility(
     p.species,
     p.generation,
     options.speciationOptions,
-    p.speciesManager
+    p.meta
   );
+  p.species.sort((a, b) => b.bestSpecimen.fitness - a.bestSpecimen.fitness);
 
   return {
     generation: p.generation + 1,
@@ -108,7 +107,6 @@ export const nextGeneration = async (
       bestOverall.kernel!,
       maxFitness
     ),
-    speciesManager: p.speciesManager,
     individuals: p.species.flatMap((s) => s.population),
     species: p.species,
     meta: p.meta,

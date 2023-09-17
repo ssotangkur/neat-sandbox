@@ -9,6 +9,7 @@ export const SpecieStatViz = ({ specie }: SpecieStatVizProps) => {
     SpecieID: specie?.specieId,
     Population: specie?.population.length,
     "Max Fitness": specie?.bestSpecimen.fitness,
+    "All-Time Max": specie?.allTimeBest,
     "Gen No Progress": specie?.genSinceImprovement,
   };
 

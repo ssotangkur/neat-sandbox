@@ -2,11 +2,11 @@ import _ from "lodash";
 import { Column } from "../ui/Column";
 import { Row } from "../ui/Row";
 import { useState } from "react";
-import { Individual } from "../neat/Population";
+import { EvaluatedIndividual } from "../neat/Population";
 import { predict } from "../neat/Inference";
 
 export type InferenceVizProps = {
-  individual?: Individual;
+  individual?: EvaluatedIndividual;
 };
 
 export const InferenceViz = ({ individual }: InferenceVizProps) => {

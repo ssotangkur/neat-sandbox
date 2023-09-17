@@ -2,9 +2,10 @@ import { NeuralNet, getEnabledGenes, getMaxIdNeuron } from "./NeuralNet";
 import { Activation, Neuron } from "./Neuron";
 import { Gene, clone, getTopologicalKey } from "./Gene";
 import _ from "lodash";
-import { Individual } from "./Population";
+import { EvaluatedIndividual } from "./Population";
 import { MutationOptions, PopulationOptions } from "./Options";
 import { NeatMeta, getInnovation, registerGene } from "./NeatMeta";
+import gaussian from "gaussian";
 
 export type MutationParameters = {
   addGeneRate: number;
@@ -169,17 +170,80 @@ export const addRandomNode = (
   return new NeuralNet(newNeurons, newGenes, meta);
 };
 
-export const mutateWeight = (nn: NeuralNet, meta: NeatMeta): NeuralNet => {
-  const gene = _.sample(getEnabledGenes(nn));
-  if (!gene) {
-    return nn;
+let _gaussian_previous: boolean = false;
+let y2 = 0;
+/**
+ * Code ported from P5.js's randomGaussian()
+ * @param mean
+ * @param sd
+ * @returns
+ */
+export const gauss = (mean: number = 0, sd = 1) => {
+  let y1, x1, x2, w;
+  if (_gaussian_previous) {
+    y1 = y2;
+    _gaussian_previous = false;
+  } else {
+    do {
+      x1 = _.random(2, true) - 1;
+      x2 = _.random(2, true) - 1;
+      w = x1 * x1 + x2 * x2;
+    } while (w >= 1);
+    w = Math.sqrt((-2 * Math.log(w)) / w);
+    y1 = x1 * w;
+    y2 = x2 * w;
+    _gaussian_previous = true;
   }
-  const change = _.random(-1, 1, true);
-  const newWeight = gene.weight + change;
-  const newGene = new Gene(gene.inNeuron, gene.outNeuron, newWeight);
-  registerGene(newGene, meta);
-  const newGenes = replaceGenes(nn.genes, [newGene], meta);
 
+  const m = mean || 0;
+  return y1 * sd + m;
+};
+
+/**
+ * @param gene gene to potentially mutate
+ * @param options
+ * @param meta
+ * @returns a mutated gene (or undefined if not mutated)
+ */
+export const mutateGene = (
+  gene: Gene,
+  options: MutationOptions
+): Gene | undefined => {
+  const r = Math.random();
+  if (r < options.weightMutateRate) {
+    const weight = _.clamp(
+      gene.weight + gauss(0, options.weightMutatePower),
+      options.weightMinValue,
+      options.weightMaxValue
+    );
+    return clone(gene, { weight });
+  }
+
+  if (r < options.weightMutateRate + options.weightReplaceRate) {
+    const weight = _.clamp(
+      gauss(options.weightInitMean, options.weightInitStdev),
+      options.weightMinValue,
+      options.weightMaxValue
+    );
+    return clone(gene, { weight });
+  }
+  // else return undefined
+  return undefined;
+};
+
+export const mutateWeights = (
+  nn: NeuralNet,
+  options: MutationOptions,
+  meta: NeatMeta
+) => {
+  const modifiedGenes: Gene[] = [];
+  getEnabledGenes(nn).forEach((gene) => {
+    const maybeModified = mutateGene(gene, options);
+    if (maybeModified) {
+      modifiedGenes.push(maybeModified);
+    }
+  });
+  const newGenes = replaceGenes(nn.genes, modifiedGenes, meta);
   return new NeuralNet(nn.neurons, newGenes, meta);
 };
 
@@ -188,10 +252,10 @@ export const mutateWeight = (nn: NeuralNet, meta: NeatMeta): NeuralNet => {
  * a new NN if any succeeds or the same NN if not.
  */
 export const mutateIndividual = (
-  individual: Individual,
+  individual: EvaluatedIndividual,
   options: MutationOptions,
   meta: NeatMeta
-): Individual => {
+): EvaluatedIndividual => {
   let result = {
     ...individual,
     neuralNet: mutateNN(individual.neuralNet, options, meta),
@@ -212,9 +276,7 @@ export const mutateNN = (
   if (Math.random() < options.addNeuronRate) {
     result = addRandomNode(result, options.activationForNewNeurons, meta);
   }
-  if (Math.random() < options.weightChangeRate) {
-    result = mutateWeight(result, meta);
-  }
+  result = mutateWeights(result, options, meta);
   return result;
 };
 
@@ -230,7 +292,7 @@ export const mutateSingle = (
   const totalPct =
     options.addGeneRate +
     options.addNeuronRate +
-    options.weightChangeRate +
+    options.weightMutateRate +
     options.biasChangeRate;
   let rand = Math.random() * totalPct;
 
@@ -244,15 +306,14 @@ export const mutateSingle = (
     return addRandomNode(nn, options.activationForNewNeurons, meta);
   }
 
-  rand -= options.weightChangeRate;
-  return mutateWeight(nn, meta);
+  return mutateWeights(nn, options, meta);
 };
 
 export const mutate = (
-  individuals: Individual[],
+  individuals: EvaluatedIndividual[],
   options: PopulationOptions,
   meta: NeatMeta
-): Individual[] => {
+): EvaluatedIndividual[] => {
   return individuals.map((i) =>
     mutateIndividual(i, options.mutationOptions, meta)
   );

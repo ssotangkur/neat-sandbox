@@ -3,18 +3,17 @@ import { styled } from "styled-components";
 import { Button } from "../ui/Button";
 
 import _ from "lodash";
-import { Individual } from "../neat/Population";
+import { Population } from "../neat/Population";
 import { SimRenderer } from "../components/three/SimRenderer";
 import {
   RocketSimulation,
-  createRandomTarget,
   defaultRocketConfig,
-  defaultSimConfig,
 } from "../simulation/RocketSimulation";
 import { RocketAgentRenderer } from "../components/three/RocketAgentRenderer";
 import { Canvas } from "@react-three/fiber";
 import { ErrorBoundary } from "react-error-boundary";
-import { useWorker } from "../utils/useWorker";
+import { Row } from "../ui/Row";
+import { progressiveConfigs } from "../simulation/EvaluateRockets";
 
 const DivRelative = styled.div`
   position: relative;
@@ -30,6 +29,54 @@ const AbsPosBtn = styled(Button)`
 
 const ResetBtn = ({ onClick }: { onClick: () => void }) => {
   return <AbsPosBtn onClick={onClick}>Reset</AbsPosBtn>;
+};
+
+const ToggleDiv = styled.div`
+  position: absolute;
+  bottom: 2px;
+  right: 20px;
+`;
+
+const OnlyBestToggle = ({
+  onToggle,
+  state,
+}: {
+  onToggle: () => void;
+  state: boolean;
+}) => {
+  return (
+    <ToggleDiv>
+      <Row>
+        <h4>Show best:&nbsp;</h4>
+        <input type="checkbox" checked={state} onChange={onToggle}></input>
+      </Row>
+    </ToggleDiv>
+  );
+};
+
+const PhaseSelectDiv = styled.div`
+  position: absolute;
+  bottom: 10px;
+  right: 200px;
+`;
+const PhaseSelect = ({
+  onPlus,
+  onMinus,
+  phase,
+}: {
+  onPlus: () => void;
+  onMinus: () => void;
+  phase: number;
+}) => {
+  return (
+    <PhaseSelectDiv>
+      <Row spacing={1}>
+        <Button onClick={onPlus}>+</Button>
+        <span>Phase: {phase}</span>
+        <Button onClick={onMinus}>-</Button>
+      </Row>
+    </PhaseSelectDiv>
+  );
 };
 
 // const StatsBox = styled(Panel)`
@@ -62,34 +109,37 @@ const ResetBtn = ({ onClick }: { onClick: () => void }) => {
 // };
 
 export type SimulationPageProps = {
-  individuals?: Individual[];
+  population?: Population;
 };
 
-export const SimulationPage = ({ individuals }: SimulationPageProps) => {
+export const SimulationPage = ({ population }: SimulationPageProps) => {
   const [rocketSim, setRocketSim] = useState<RocketSimulation>();
-
-  const [stats, invokeEval] = useWorker("EvalRockets", (a) => console.log(a));
+  const [onlyBest, setOnlyBest] = useState(false);
+  const [phase, setPhase] = useState(0);
 
   // We need to be able to track if the sim is initialized or not
   const initializedRef = useRef(false);
 
   const resetSim = useCallback(() => {
-    if (!individuals) {
+    if (!population) {
       return;
     }
     const rocketSim = new RocketSimulation(
       defaultRocketConfig,
-      defaultSimConfig()
+      progressiveConfigs[phase]
     );
     initializedRef.current = false;
     const initSim = async () => {
-      await rocketSim.init(individuals);
+      await rocketSim.init(
+        onlyBest ? [population.best] : population.individuals
+      );
+      console.log(population.best);
       initializedRef.current = true;
       setRocketSim(rocketSim);
     };
     initSim();
     return rocketSim;
-  }, [individuals]);
+  }, [population?.individuals, onlyBest, phase]);
 
   useEffect(() => {
     const sim = resetSim();
@@ -101,7 +151,17 @@ export const SimulationPage = ({ individuals }: SimulationPageProps) => {
         console.error(error);
       }
     };
-  }, [individuals]);
+  }, [population?.individuals, onlyBest, phase]);
+
+  const onPlus = () => {
+    setPhase((prev) => {
+      const newPhase = Math.min(progressiveConfigs.length - 1, prev + 1);
+      return newPhase;
+    });
+  };
+  const onMinus = () => {
+    setPhase((prev) => Math.max(0, prev - 1));
+  };
 
   return (
     <DivRelative>
@@ -113,30 +173,12 @@ export const SimulationPage = ({ individuals }: SimulationPageProps) => {
         ) : (
           <h1>Initializing...</h1>
         )}
-        {/* <Canvas shadows>
-        <PerspectiveCamera position={[0, 4, 10]} makeDefault />
-        <OrbitControls
-          // enableZoom={true}
-          // maxPolarAngle={Math.PI / 2}
-          // minPolarAngle={Math.PI / 2}
-          dampingFactor={0.3}
-        ></OrbitControls>
-        <directionalLight
-          args={[]}
-          position={[-10, 100, 10]}
-          castShadow={true}
+        <ResetBtn onClick={() => resetSim()} />
+        <OnlyBestToggle
+          onToggle={() => setOnlyBest((prev) => !prev)}
+          state={onlyBest}
         />
-        <Axes />
-        {show &&
-          rockets.flatMap((r, i) => [
-            <RocketViz key={"rocket-" + i} rocket={r} />,
-            <Target key={"target-" + i} rocket={r} />,
-          ])}
-      </Canvas>
-      <TwoAxisInput onDrag={onGimbal} onRelease={onRelease} />
-      <Stats rocket={rockets[0]} /> 
-        */}
-        <ResetBtn onClick={resetSim} />
+        <PhaseSelect onMinus={onMinus} onPlus={onPlus} phase={phase} />
       </ErrorBoundary>
     </DivRelative>
   );

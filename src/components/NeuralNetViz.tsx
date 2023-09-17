@@ -2,9 +2,10 @@ import { NeatMeta, getInnovation } from "../neat/NeatMeta";
 import { getEnabledGenes } from "../neat/NeuralNet";
 import { EvaluatedIndividual } from "../neat/Population";
 
-const NODE_SIZE_PX = 30;
-const WEIGHTS_WIDTH_PX = 60;
-const VERTICAL_SPACING_BETWEEN_NODES_PX = 40;
+const NODE_SIZE_PX = 12;
+const WEIGHTS_WIDTH_PX = 30;
+const VERTICAL_SPACING_BETWEEN_NODES_PX = 15;
+const CONNECTIONS_THICKNESS = 7;
 
 // SVG* components must be children of <svg> tag
 const SVGNeuronCircle = ({
@@ -34,6 +35,7 @@ const SVGNeuronCircle = ({
         stroke="black"
         dominantBaseline="middle"
         textAnchor="middle"
+        fontSize={8}
       >
         {text}
       </text>
@@ -65,7 +67,10 @@ const SVGWeightLine = ({
   normalizedWeight: number;
 }) => {
   const color = normalizedWeight >= 0 ? "green" : "red";
-  const thickness = Math.max(Math.abs(normalizedWeight * 10), 1);
+  const thickness = Math.max(
+    Math.abs(normalizedWeight * CONNECTIONS_THICKNESS),
+    1
+  );
   return (
     <line
       x1={x1}

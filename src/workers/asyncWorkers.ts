@@ -1,4 +1,5 @@
 import { nextGeneration } from "../neat/Population";
+import { evaluateRocketPhase } from "../simulation/EvaluateRockets";
 import { AsyncWorker } from "../utils/runWorker";
 import { sumFunc } from "./EvalRockets";
 
@@ -13,6 +14,11 @@ self.onmessage = <T extends keyof AsyncWorker>(
       break;
     case "sum":
       self.postMessage(sumFunc(...(e.data.args as Parameters<typeof sumFunc>)));
+      break;
+    case "evaluateRocketPhase":
+      evaluateRocketPhase(
+        ...(e.data.args as Parameters<typeof evaluateRocketPhase>)
+      ).then(self.postMessage);
       break;
     case "terminate":
       self.onmessage = null;

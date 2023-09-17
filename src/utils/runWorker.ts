@@ -1,10 +1,12 @@
 import { nextGeneration } from "../neat/Population";
+import { evaluateRocketPhase } from "../simulation/EvaluateRockets";
 import MyWorker from "../workers/asyncWorkers?worker";
 import { SumFunc } from "./useWorker";
 
 export type AsyncWorker = {
   sum: SumFunc;
   nextGeneration: typeof nextGeneration;
+  evaluateRocketPhase: typeof evaluateRocketPhase;
   terminate: () => void;
 };
 
@@ -15,7 +17,7 @@ export type SmartWrapPromise<T> = T extends Promise<infer P>
 
 export const terminateAction = { action: "terminate", args: undefined };
 
-const reserveCount = 2; // Don't clean more than these
+const reserveCount = 8; // Don't clean more than these
 const availableWorkers: Worker[] = [];
 
 const getOrMakeWorker = () => {

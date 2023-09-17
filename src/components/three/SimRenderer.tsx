@@ -2,7 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { Agent, Simulation } from "../../simulation/Simulation";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Axes } from "./Axes";
-import { useRef, FunctionComponent } from "react";
+import { useRef, FunctionComponent, useEffect } from "react";
 import _ from "lodash";
 
 const TIME_SLICE = 1 / 60;
@@ -59,6 +59,13 @@ export const SimRenderer = <T extends Agent>({
       callbacksRef.current.delete(onStep);
     };
   };
+
+  // Remove subscribers on unmount to prevent error msgs
+  useEffect(() => {
+    return () => {
+      callbacksRef.current.clear();
+    };
+  }, []);
 
   return (
     <>

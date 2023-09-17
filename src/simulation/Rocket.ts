@@ -26,6 +26,7 @@ export type SimulationConfig = {
   target: Vector3;
   boundsRadius: number; // how far from origin can the rocket be before going out of bounds
   maxSteps: number;
+  passDistance: number; // how close to the target the rocket needs to be
 };
 
 export class Rocket implements Agent {
@@ -43,6 +44,7 @@ export class Rocket implements Agent {
   public angularVelocity = new Vector3();
   public velocity = new Vector3();
   public rigidBody: RigidBody | undefined;
+  public _passed = false;
 
   constructor(
     public readonly startPosition: Vector3,
@@ -60,6 +62,10 @@ export class Rocket implements Agent {
 
   public fitness() {
     return this._fitness;
+  }
+
+  public passed() {
+    return this._passed;
   }
 
   public init(world: World) {
@@ -140,18 +146,31 @@ export class Rocket implements Agent {
 
     // use a modified distance to target that rewards x/z distance over y distance
     const modifiedDist = new Vector3(
-      this.vecToTarget.x * 10,
+      this.vecToTarget.x * 3,
       this.vecToTarget.y,
-      this.vecToTarget.z * 10
+      this.vecToTarget.z * 3
     );
+
+    // take the product of each coord to incentize exploring in all directions
+    // const missingAxisPenalty =
+    //   Math.max(1, Math.abs(modifiedDist.x)) *
+    //   Math.max(1, Math.abs(modifiedDist.y)) *
+    //   Math.max(1, Math.abs(modifiedDist.z));
+
     this.distanceToTarget = modifiedDist.length();
     this.angularVelocity = vec3(this.rigidBody.angvel());
     if (this.distanceToTarget < this.closestDistToTarget) {
       this.fuelAtClosest = this.fuel;
       this.closestDistToTarget = this.distanceToTarget;
       this._fitness =
-        (this.fuelAtClosest * 100) /
-        (this.closestDistToTarget + 1 + this.angularVelocity.length());
+        (this.fuelAtClosest + Math.max(0, 20 - this.distanceToTarget)) /
+        (1 +
+          Math.max(20, this.distanceToTarget) +
+          this.angularVelocity.length());
+
+      if (this.distanceToTarget < this.simConfig.passDistance) {
+        this._passed = true;
+      }
     }
 
     // collect other stats

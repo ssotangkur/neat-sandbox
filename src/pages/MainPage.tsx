@@ -1,9 +1,5 @@
 import { ChangeEventHandler, useCallback, useEffect, useState } from "react";
-import {
-  EvaluatedIndividual,
-  Individual,
-  Population,
-} from "../neat/Population";
+import { EvaluatedIndividual, Population } from "../neat/Population";
 import { Button } from "../ui/Button";
 import { Panel } from "../ui/Panel";
 import { Column } from "../ui/Column";
@@ -61,7 +57,7 @@ const RunUntilSolutionBtn = (props: RunUntilSolutionBtnProps) => {
 
 export const MainPage = () => {
   const [population, setPopulation] = useState<Population>();
-  const [selected, setSelected] = useState<Individual>();
+  const [selected, setSelected] = useState<EvaluatedIndividual>();
   const [selectedSpecie, setSelectedSpecie] = useState<Specie>();
   const [running, setRunning] = useState(false);
 
@@ -72,20 +68,8 @@ export const MainPage = () => {
     },
     [epochs]
   );
-  const updateEpoch = useCallback(
-    (p: {
-      minFitness: number;
-      maxFitness: number;
-      bestOverall: EvaluatedIndividual;
-      individuals: EvaluatedIndividual[];
-    }) => {
-      console.log(p);
-    },
-    []
-  );
 
-  // const [msg, invoke] = useWorker("EvalRockets", updateEpoch);
-  const [p, nextGen] = useWorker("nextGeneration", handleNextGen);
+  const [_, nextGen] = useWorker("nextGeneration", handleNextGen);
 
   useEffect(() => {
     const setPopAsync = async () => {
@@ -96,7 +80,7 @@ export const MainPage = () => {
   }, []);
 
   const onHover = useCallback(
-    (i: Individual) => {
+    (i: EvaluatedIndividual) => {
       setSelected(i);
     },
     [setSelected]
@@ -126,9 +110,7 @@ export const MainPage = () => {
     Charts: <ChartPage epochs={epochs} />,
     Simulation: (
       <ErrorBoundary fallback={<h1>Error</h1>}>
-        <SimulationPage
-          individuals={population?.species.flatMap((s) => s.population)}
-        />
+        <SimulationPage population={population} />
       </ErrorBoundary>
     ),
     Options: <OptionsPage setCurrentOptions={(o) => (options = o)} />,
@@ -145,28 +127,6 @@ export const MainPage = () => {
       >
         <Tabs config={tabConfig} $grow />
         <Row spacing={1} $padding={1}>
-          <Button
-            onClick={async () => {
-              setRunning(true);
-              setPopulation(await epochs.newEpoch(options));
-              setRunning(false);
-            }}
-            disabled={!!population?.foundSolution || running}
-          >
-            Mutate Population
-          </Button>
-          {/* <Button
-            onClick={async () => {
-              if (population && population.individuals.length > 0) {
-                setRunning(true);
-                invoke(population.individuals);
-                setRunning(false);
-              }
-            }}
-            disabled={!!population?.foundSolution || running}
-          >
-            Mutate Population2
-          </Button> */}
           <Button
             onClick={async () => {
               if (population && population.individuals.length > 0) {

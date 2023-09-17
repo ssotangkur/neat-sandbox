@@ -1,5 +1,5 @@
 import { GenoTypeViz } from "../components/GenoTypeViz";
-import { Individual, Population } from "../neat/Population";
+import { EvaluatedIndividual, Population } from "../neat/Population";
 import { Panel } from "../ui/Panel";
 import { Column } from "../ui/Column";
 
@@ -10,7 +10,7 @@ import { KeyValueTable } from "../ui/KeyValueTable";
 import { SpecieStatViz } from "../components/SpecieStatViz";
 
 export type SpeciationPageProps = {
-  selected?: Individual;
+  selected?: EvaluatedIndividual;
   selectedSpecie?: Specie;
   population?: Population;
 } & SpeciationVizProps;

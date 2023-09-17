@@ -19,7 +19,13 @@ export type MutationOptions = {
   addGeneRate: number;
   addNeuronRate: number;
   activationForNewNeurons: Activation;
-  weightChangeRate: number;
+  weightMutateRate: number;
+  weightMutatePower: number;
+  weightReplaceRate: number;
+  weightMaxValue: number;
+  weightMinValue: number;
+  weightInitMean: number;
+  weightInitStdev: number;
   biasChangeRate: number;
 };
 
@@ -27,7 +33,13 @@ export const DefaultMutationOptions: MutationOptions = {
   addGeneRate: 0.01,
   addNeuronRate: 0.01,
   activationForNewNeurons: "sigmoid",
-  weightChangeRate: 0.3,
+  weightMutateRate: 0.8,
+  weightMutatePower: 0.5,
+  weightReplaceRate: 0.1,
+  weightMaxValue: 30,
+  weightMinValue: -30,
+  weightInitMean: 0.0,
+  weightInitStdev: 1.0,
   biasChangeRate: 0.05,
 };
 
@@ -117,9 +129,9 @@ export const serializeableOption = (options?: PopulationOptions) => {
 export const materializeOption = (
   serializeable: SerializeablePopulationOptions
 ) => {
-  const result: PopulationOptions = {
+  const result: PopulationOptions = createOptions({
     ...serializeable,
-  };
+  });
   return result;
 };
 

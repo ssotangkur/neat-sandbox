@@ -5,8 +5,6 @@ import {
   PopulationOptions,
   SerializeablePopulationOptions,
   createOptions,
-  getEndCondition,
-  getEvaluateIndividuals,
   materializeOption,
   serialize,
   serializeableOption,
@@ -97,8 +95,6 @@ const reducer = (
       const { name, ...propsWithoutName } = payload;
       const p: PartialPopulationOptions = {
         ...propsWithoutName,
-        evaluateIndividuals: getEvaluateIndividuals(payload.evalType),
-        endCondition: getEndCondition(payload.evalType),
       };
       next.optionSet[payload.name] = createOptions(p);
       next.selectedKey = name;

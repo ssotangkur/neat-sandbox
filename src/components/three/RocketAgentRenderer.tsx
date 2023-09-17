@@ -32,7 +32,10 @@ export const RocketAgentRenderer: AgentRenderer<Rocket> = (props) => {
         <meshLambertMaterial color="grey" />
       </Cylinder>
 
-      <Sphere args={[1]} position={rocket.simConfig.target}>
+      <Sphere
+        args={[rocket.simConfig.passDistance]}
+        position={rocket.simConfig.target}
+      >
         <meshLambertMaterial color="red" />
       </Sphere>
     </>

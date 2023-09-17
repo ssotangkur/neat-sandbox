@@ -1,11 +1,12 @@
 import rapier, { RigidBody } from "@dimforge/rapier3d-compat";
-import { EvaluatedIndividual, Individual } from "../neat/Population";
+import { Individual } from "../neat/Population";
 
 export interface Agent {
   init: (world: rapier.World) => void;
   step: () => boolean; // returns whether to continue the simulation
   fitness: () => number;
   rigidBody?: RigidBody;
+  passed: () => boolean; // whether the agent met the goal/end condition
 }
 
 /**
@@ -27,7 +28,7 @@ export interface Simulation<T extends Agent> {
   init: (individuals: Individual[]) => Promise<void>;
   step: () => void;
   active: () => boolean; // If returns true, simulation can be run for at least one more step
-  evaluate: () => EvaluatedIndividual[]; // Called after step returns false
+  evaluate: () => Individual[]; // Called after step returns false
   agents(): T[];
   reset: () => void; // cleanup resources, init will need to be called again
 }

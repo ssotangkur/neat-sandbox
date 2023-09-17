@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { Individual, EvaluatedIndividual } from "../neat/Population";
+import { EvaluatedIndividual, Individual } from "../neat/Population";
 import { Rocket, RocketConfig, SimulationConfig } from "./Rocket";
 import { Simulation } from "./Simulation";
 import rapier, { World } from "@dimforge/rapier3d-compat";
@@ -17,6 +17,7 @@ export const defaultSimConfig = (): SimulationConfig => ({
   target: createRandomTarget(),
   boundsRadius: 200,
   maxSteps: 200,
+  passDistance: 20,
 });
 
 export const createRandomTarget = () => {
