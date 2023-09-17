@@ -7,8 +7,7 @@
     "addGeneRate": 0.01,
     "addNeuronRate": 0.01,
     "activationForNewNeurons": "sigmoid",
-    "weightChangeRate": 0.3,
-    "biasChangeRate": 0.05
+    "weightChangeRate": 0.3
   },
   "speciationOptions": {
     "compatibilityThreshold": 0.9,

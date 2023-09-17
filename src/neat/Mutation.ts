@@ -289,10 +289,7 @@ export const mutateSingle = (
   meta: NeatMeta
 ) => {
   const totalPct =
-    options.addGeneRate +
-    options.addNeuronRate +
-    options.weightMutateRate +
-    options.biasChangeRate;
+    options.addGeneRate + options.addNeuronRate + options.weightMutateRate;
   let rand = Math.random() * totalPct;
 
   rand -= options.addGeneRate;

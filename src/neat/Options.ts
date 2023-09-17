@@ -26,7 +26,6 @@ export type MutationOptions = {
   weightMinValue: number;
   weightInitMean: number;
   weightInitStdev: number;
-  biasChangeRate: number;
 };
 
 export const DefaultMutationOptions: MutationOptions = {
@@ -40,7 +39,6 @@ export const DefaultMutationOptions: MutationOptions = {
   weightMinValue: -30,
   weightInitMean: 0.0,
   weightInitStdev: 1.0,
-  biasChangeRate: 0.05,
 };
 
 export type SpeciationOptions = {

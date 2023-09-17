@@ -282,7 +282,7 @@ export const isSameSpecie = (
   meta: NeatMeta
 ) => {
   return (
-    (specie.manager.dynamicCompatibilityThreshold ??
+    (specie.meta.dynamicCompatibilityThreshold ??
       options.compatibilityThreshold) >
     compare(individual, specie.bestSpecimen, options, meta)
   );
@@ -329,17 +329,16 @@ export class Specie {
   constructor(
     specimen: EvaluatedIndividual,
     public readonly options: SpeciationOptions,
-    public readonly manager: NeatMeta
+    public readonly meta: NeatMeta
   ) {
     this.population = [];
     this.bestSpecimen = specimen;
     add(this, specimen);
     this.targetPopulation = options.minPopulation;
-    this.specieId = ++manager.highestSpecieId;
+    this.specieId = ++meta.highestSpecieId;
     // manager.specieIdsMap.set(this.specieId, this);
-    if (manager.dynamicCompatibilityThreshold === undefined) {
-      manager.dynamicCompatibilityThreshold =
-        this.options.compatibilityThreshold;
+    if (meta.dynamicCompatibilityThreshold === undefined) {
+      meta.dynamicCompatibilityThreshold = this.options.compatibilityThreshold;
     }
   }
 }
