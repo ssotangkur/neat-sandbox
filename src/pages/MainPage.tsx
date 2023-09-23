@@ -5,7 +5,6 @@ import { Panel } from "../ui/Panel";
 import { Column } from "../ui/Column";
 import { Row } from "../ui/Row";
 import { FullScreen } from "../ui/FullScreen";
-import { createOptions, readFromLocalStorage } from "../neat/Options";
 import { Specie } from "../neat/Speciation";
 import { InferenceViz } from "../components/InferenceViz";
 import { Tabs } from "../ui/Tabs";
@@ -13,22 +12,11 @@ import { SpeciationPage } from "./SpeciationPage";
 import { Epochs, toEpoch } from "../neat/Epoch";
 import { ChartPage } from "./ChartPage";
 import { SimulationPage } from "./SimulationPage";
-import { OptionsPage } from "./options/OptionsPage";
+import { OptionsPage, optionAtom } from "./options/OptionsPage";
 import { ErrorBoundary } from "react-error-boundary";
 import { useWorker } from "../utils/useWorker";
 import { NeatMeta } from "../neat/NeatMeta";
-
-// Get current options from local storage or make some as default
-const { optionSet, currentOption } = readFromLocalStorage();
-const optionKey = currentOption ?? Object.keys(optionSet)[0]; // Fallback to first option if undefined
-let options = optionKey
-  ? optionSet[optionKey]
-  : createOptions({
-      count: 150,
-      inputs: 2,
-      outputs: 1,
-      evalType: "XOR",
-    });
+import { useAtom } from "jotai";
 
 const meta = new NeatMeta();
 const epochs = new Epochs(meta);
@@ -60,6 +48,7 @@ export const MainPage = () => {
   const [selected, setSelected] = useState<EvaluatedIndividual>();
   const [selectedSpecie, setSelectedSpecie] = useState<Specie>();
   const [running, setRunning] = useState(false);
+  const [options] = useAtom(optionAtom);
 
   const handleNextGen = useCallback(
     (p: Population) => {
@@ -77,7 +66,7 @@ export const MainPage = () => {
       setPopulation(pop);
     };
     setPopAsync();
-  }, []);
+  }, [options]);
 
   const onHover = useCallback(
     (i: EvaluatedIndividual) => {
@@ -113,7 +102,7 @@ export const MainPage = () => {
         <SimulationPage population={population} />
       </ErrorBoundary>
     ),
-    Options: <OptionsPage setCurrentOptions={(o) => (options = o)} />,
+    Options: <OptionsPage />,
   };
 
   return (

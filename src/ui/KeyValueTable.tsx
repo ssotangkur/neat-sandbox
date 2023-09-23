@@ -37,7 +37,7 @@ export const KeyValueTable = ({ data }: KeyValueProps) => {
       <tbody>
         <tr>
           {Object.entries(data).map(([_, value], i) => (
-            <TD key={i}>{value}</TD>
+            <TD key={i}>{`${value}`}</TD>
           ))}
         </tr>
       </tbody>

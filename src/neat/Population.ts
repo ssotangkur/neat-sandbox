@@ -29,10 +29,12 @@ export const initalizePopulation = async (
   const newGen = _.range(options.count)
     .map(() => createSimpleNeuralNet(options.inputs, options.outputs, meta))
     .map((nn) => {
-      return {
+      const result: Individual = {
         neuralNet: nn,
         kernel: new Kernel(nn),
-      } as Individual;
+        age: 0,
+      };
+      return result;
     });
   const { minFitness, maxFitness, bestOverall, individuals } =
     await getEvaluateIndividuals(options.evalType)(newGen);
@@ -58,6 +60,7 @@ export type Individual = {
   neuralNet: NeuralNet;
   kernel: Kernel;
   speciesId?: number;
+  age: number; // How manage generations it has been an elite
 };
 
 export type EvaluatedIndividual = Individual & {

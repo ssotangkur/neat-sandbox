@@ -56,7 +56,7 @@ export const SpeciationPage = ({
       </Panel>
       <Panel $constrainchildwidth $noshrink>
         {population?.meta ? (
-          <GenoTypeViz neuralNet={selected?.neuralNet} meta={population.meta} />
+          <GenoTypeViz individual={selected} meta={population.meta} />
         ) : null}
       </Panel>
     </Column>

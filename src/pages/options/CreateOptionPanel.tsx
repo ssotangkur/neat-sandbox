@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { EvalType } from "../../neat/Options";
+import { EvalType, createOptions } from "../../neat/Options";
 import { Button } from "../../ui/Button";
 import { Column } from "../../ui/Column";
 import { Panel } from "../../ui/Panel";
 import { Row } from "../../ui/Row";
+import { KeyOption } from "./OptionsPage";
 
 export type CreateOptionPanelProps = {
-  addOption?: (required: Required<RequiredProps>) => void;
+  addOption: (keyOptions: KeyOption) => void;
 };
 
 export type RequiredProps = {
@@ -54,7 +55,9 @@ export const CreateOptionPanel = ({
   };
 
   const onClick = () => {
-    onSubmit?.(required as Required<RequiredProps>);
+    const { name, ...reqProps } = required as Required<RequiredProps>;
+    const option = createOptions(reqProps);
+    onSubmit({ key: name, option });
   };
 
   const valid =

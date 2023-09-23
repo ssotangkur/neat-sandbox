@@ -1,18 +1,12 @@
-import { OptionSet } from "../../neat/Options";
+import { currentOptionKeyAtom, optionSetAtom } from "./OptionsPage";
+import { useAtom } from "jotai";
 
-type OptionSelectProps = {
-  optionSet: OptionSet;
-  selectedKey: keyof OptionSet | undefined;
-  onSelect: (key: keyof OptionSet) => void;
-};
+export const OptionSelect = () => {
+  const [optionSet] = useAtom(optionSetAtom);
+  const [selectedKey, setKey] = useAtom(currentOptionKeyAtom);
 
-export const OptionSelect = ({
-  optionSet,
-  selectedKey,
-  onSelect,
-}: OptionSelectProps) => {
   return (
-    <select value={selectedKey} onChange={(e) => onSelect(e.target.value)}>
+    <select value={selectedKey} onChange={(e) => setKey(e.target.value)}>
       {Object.keys(optionSet).map((key) => (
         <option key={key} value={key}>
           {key}

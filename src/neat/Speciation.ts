@@ -7,7 +7,7 @@ import {
 } from "./Population";
 import { Kernel } from "./Inference";
 import { PopulationOptions, SpeciationOptions } from "./Options";
-import { mutateNN, mutateSingle } from "./Mutation";
+import { mutateNN } from "./Mutation";
 import { NeuralNet } from "./NeuralNet";
 import { NeatMeta, getInnovation } from "./NeatMeta";
 
@@ -141,15 +141,13 @@ export const reproduce = (
         b.fitness,
         meta
       );
-      const ABIsSame = compare(a, b, options.speciationOptions, meta) === 0;
-      const mutated = ABIsSame
-        ? mutateSingle(nn, options.mutationOptions, meta)
-        : mutateNN(nn, options.mutationOptions, meta);
+      const mutated = mutateNN(nn, options.mutationOptions, meta);
       try {
         const child: Individual = {
           neuralNet: mutated,
           kernel: new Kernel(mutated),
           speciesId: a.speciesId,
+          age: 0,
         };
         nextGen.push(child);
       } catch (error) {
@@ -168,7 +166,10 @@ export const copyElites = (species: Specie[]): EvaluatedIndividual[] => {
     if (s.population.length) {
       s.bestSpecimen = s.population[0]; // since its sorted, first is best
     }
-    return s.population.slice(0, s.numElites);
+    const elites = s.population.slice(0, s.numElites);
+    // Increment the age of all elites
+    elites.forEach((e) => e.age++);
+    return elites;
   });
 };
 

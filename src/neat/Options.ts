@@ -104,53 +104,14 @@ export const createOptions = (
 
 export type EvalType = "XOR" | "Rocket";
 
-// Type that removes the functions and substitutes them with a enum: evalType
-export type SerializeablePopulationOptions = Omit<
-  PopulationOptions,
-  "evaluateIndividuals" | "endCondition"
-> & {
-  evalType: EvalType;
-};
-
 export type OptionSet = Record<string, PopulationOptions>;
 
-export const serializeableOption = (options?: PopulationOptions) => {
-  if (!options) {
-    return;
-  }
-  const serializeable: SerializeablePopulationOptions = {
-    ...options,
-  };
-  return serializeable;
-};
-
-export const materializeOption = (
-  serializeable: SerializeablePopulationOptions
-) => {
-  const result: PopulationOptions = createOptions({
-    ...serializeable,
-  });
-  return result;
-};
-
 export const serialize = (optionSet: OptionSet) => {
-  const serializeable: Record<string, SerializeablePopulationOptions> = {};
-  Object.entries(optionSet).forEach(([key, option]) => {
-    const serialOption = serializeableOption(option);
-    if (serialOption) {
-      serializeable[key] = serialOption;
-    }
-  });
-  return JSON.stringify(serializeable);
+  return JSON.stringify(optionSet);
 };
 
 export const deserialize = (optionSetStr: string) => {
-  const serializeable: Record<string, SerializeablePopulationOptions> =
-    JSON.parse(optionSetStr);
-  const result: OptionSet = {};
-  Object.entries(serializeable).map(([key, option]) => {
-    result[key] = materializeOption(option);
-  });
+  const result: OptionSet = JSON.parse(optionSetStr);
   return result;
 };
 

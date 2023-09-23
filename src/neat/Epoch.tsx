@@ -11,11 +11,12 @@ export class Epochs {
   }
 
   public async init(options: PopulationOptions) {
-    if (!this.currentPopulation) {
-      const newPop = await initalizePopulation(options, this.meta);
-      this.epochs.push(toEpoch(newPop));
-      this.currentPopulation = newPop;
-    }
+    this.reset();
+
+    const newPop = await initalizePopulation(options, this.meta);
+    this.epochs.push(toEpoch(newPop));
+    this.currentPopulation = newPop;
+
     return this.currentPopulation;
   }
 
@@ -41,8 +42,9 @@ export class Epochs {
     return e;
   }
 
-  public clearEpochs() {
+  public reset() {
     this.epochs = [];
+    this.currentPopulation = undefined;
   }
 }
 

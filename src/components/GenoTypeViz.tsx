@@ -1,10 +1,11 @@
 import { Gene, getTopologicalKey } from "../neat/Gene";
-import { NeuralNet } from "../neat/NeuralNet";
 import { styled } from "styled-components";
 import { Neuron } from "../neat/Neuron";
 import { Row } from "../ui/Row";
 import { Column } from "../ui/Column";
 import { NeatMeta, getInnovation } from "../neat/NeatMeta";
+import { KeyValueTable } from "../ui/KeyValueTable";
+import { EvaluatedIndividual } from "../neat/Population";
 
 const RowNames = styled.div`
   display: flex;
@@ -51,19 +52,26 @@ const NeuronComp = ({ neuron }: { neuron: Neuron }) => {
 };
 
 export const GenoTypeViz = ({
-  neuralNet,
+  individual,
   meta,
 }: {
-  neuralNet?: NeuralNet;
+  individual?: EvaluatedIndividual;
   meta: NeatMeta;
 }) => {
-  const { genes, neurons } = neuralNet ?? {
-    genes: [] as Gene[],
-    neurons: [] as Neuron[],
+  const genes: Gene[] = individual?.neuralNet.genes ?? [];
+  const neurons: Neuron[] = individual?.neuralNet.neurons ?? [];
+
+  const data = {
+    age: individual?.age,
+    fitness: individual?.fitness,
+    specieId: individual?.speciesId,
   };
 
   return (
     <Column $constrainchildwidth>
+      <Row $constrainchildwidth>
+        <KeyValueTable data={data} />
+      </Row>
       <Row $constrainchildwidth>
         <RowNames>
           <div>Innovation:</div>
